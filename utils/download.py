@@ -1,5 +1,9 @@
 ########################################################################
 #
+# Minor changes for it to work with my repo - Imanol Schlag
+#
+########################################################################
+#
 # Functions for downloading and extracting data-files from the internet.
 #
 # Implemented in Python 3.5
@@ -24,7 +28,6 @@ import numpy as np
 
 ########################################################################
 
-
 def _print_download_progress(count, block_size, total_size):
     """
     Function used for printing the download progress.
@@ -43,7 +46,6 @@ def _print_download_progress(count, block_size, total_size):
 
 
 ########################################################################
-
 
 def maybe_download_and_extract(url, download_dir):
     """
@@ -64,13 +66,10 @@ def maybe_download_and_extract(url, download_dir):
     filename = url.split('/')[-1]
     file_path = os.path.join(download_dir, filename)
 
-    # Check if the file already exists.
+    # Check if the download directory exists, otherwise create it.
     # If it exists then we assume it has also been extracted,
-    # otherwise we need to download and extract it now.
-    if not os.path.exists(file_path):
-        # Check if the download directory exists, otherwise create it.
-        if not os.path.exists(download_dir):
-            os.makedirs(download_dir)
+    if not os.path.exists(download_dir):
+        os.makedirs(download_dir)
 
         # Download the file from the internet.
         file_path, _ = urllib.request.urlretrieve(url=url,
@@ -89,7 +88,6 @@ def maybe_download_and_extract(url, download_dir):
         print("Data has apparently already been downloaded and unpacked.")
 
 ########################################################################
-
 
 def maybe_download(url, download_dir):
     """

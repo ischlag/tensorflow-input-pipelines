@@ -1,3 +1,10 @@
+###############################################################################
+# Author:       Imanol Schlag (more info on ischlag.github.io)
+# Description:  downloads and loads the stanford cars 196 dataset into memory.
+# Date:         11.2016
+#
+#
+
 import scipy.io
 import numpy as np
 from utils import download

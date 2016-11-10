@@ -1,14 +1,15 @@
+###############################################################################
+# Author:       Imanol Schlag (more info on ischlag.github.io)
+# Description:  Functions to download and load SVHN into memory.
+# Date:         10.11.2016
 #
-# Functions for downloading the SVHN data-set from the internet
-# and loading it into memory.
 #
-
 
 import sys
 import os
 from six.moves.urllib.request import urlretrieve
 
-from utils.dataset import one_hot_encoded
+from utils.download import one_hot_encoded
 import scipy.io
 
 data_path = "data/SVHN/"

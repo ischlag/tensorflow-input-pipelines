@@ -1,23 +1,23 @@
 ###############################################################################
 # Author:       Imanol Schlag (more info on ischlag.github.io)
 # Description:  imagenet input pipeline
-# Date:         10.11.2016
+# Date:         11.2016
 #
 #
+# TODO: 23 images are not jpeg and should be used with the according decoder.
+
 """ Usage:
 import tensorflow as tf
 sess = tf.Session()
 
-from datasets.imagenet import imagenet_data
-d = imagenet_data(batch_size=64, sess=sess)
-tensor_images, tensor_targets = d.build_train_data_tensor()
+with tf.device('/cpu:0'):
+  from datasets.imagenet import imagenet_data
+  d = imagenet_data(batch_size=64, sess=sess)
+  image_batch_tensor, target_batch_tensor = d.build_train_data_tensor()
 
-init_op = tf.initialize_all_variables()
-sess.run(init_op)
-
-images_batch, labels_batch = sess.run([tensor_images, tensor_targets])
-print(images_batch.shape)
-print(labels_batch.shape)
+image_batch, target_batch = sess.run([image_batch_tensor, target_batch_tensor])
+print(image_batch.shape)
+print(target_batch.shape)
 """
 
 import tensorflow as tf
@@ -30,15 +30,18 @@ class imagenet_data:
   """
   Downloads the imagenet dataset and creates an input pipeline ready to be fed into a model.
 
-  # memory calculation:
-  # 1 image is 299*299*3*4 bytes = ~1MB
-  # 1024MB RAM = ~1000 images
-  # filename_queue   ~300MB
-  #
+  memory calculation:
+    1 image is 299*299*3*4 bytes = ~1MB
+    1024MB RAM = ~1000 images
+
+  empirical memory usage with default config:
+    TensorFlow +500MB
+    imagenet_utils (loading all paths and labels) +400MB
+    build input pipeline and fill queues +2.2GB
 
   - decodes jpg images
   - scales images into a uniform size
-  - shuffles the input
+  - shuffles the input if specified
   - builds batches
   """
   NUM_THREADS = 8
@@ -53,7 +56,9 @@ class imagenet_data:
                filename_feed_size=200,
                filename_queue_capacity=800,
                batch_queue_capacity=1000,
-               min_after_dequeue=1000):
+               min_after_dequeue=1000,
+               image_height=IMAGE_HEIGHT,
+               image_width=IMAGE_WIDTH):
     """ Downloads the data if necessary. """
     self.batch_size = batch_size
     self.filename_feed_size = filename_feed_size
@@ -61,6 +66,9 @@ class imagenet_data:
     self.batch_queue_capacity = batch_queue_capacity + 3 * batch_size
     self.min_after_dequeue = min_after_dequeue
     self.sess = sess
+    self.IMAGE_HEIGHT = image_height
+    self.IMAGE_WIDTH = image_width
+    imagenet.check_if_downloaded()
 
   def build_train_data_tensor(self, shuffle=False, augmentation=False):
     img_path, cls = imagenet.load_training_data()
@@ -85,7 +93,11 @@ class imagenet_data:
     enqueue_op = self.filename_queue.enqueue_many([imagepath_input, target_input])
     single_path, single_target = self.filename_queue.dequeue()
 
-    ## image processing
+    # one hot encode the target
+    single_target = tf.cast(tf.sub(single_target, tf.constant(1.0)), tf.int32)
+    single_target = tf.one_hot(single_target, depth=self.NUMBER_OF_CLASSES)
+
+    # load the jpg image according to path
     file_content = tf.read_file(single_path)
     single_image = tf.image.decode_jpeg(file_content, channels=self.NUM_OF_CHANNELS)
 

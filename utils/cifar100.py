@@ -1,5 +1,5 @@
 #
-# cifar-10 file edited such that it works with cifar-100 -Imanol
+# cifar-10 file edited such that it works with cifar-100 - Imanol Schlag
 #
 ########################################################################
 #

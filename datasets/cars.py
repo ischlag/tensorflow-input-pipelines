@@ -1,10 +1,7 @@
-###############################################################################
-#
-# IDSIA, Research Project
-#
-# Author:       Imanol
+##############################################################################
+# Author:       Imanol Schlag (more info on ischlag.github.io)
 # Description:  stanford cars 196 input pipeline
-# Date:         08.11.2016
+# Date:         11.2016
 #
 #
 
@@ -12,18 +9,14 @@
 import tensorflow as tf
 sess = tf.Session()
 
-from datasets.cars import cars_data
-d = cars_data(batch_size=256, sess=sess)
-tensor_images, tensor_targets = d.build_train_data_tensor()
+with tf.device('/cpu:0'):
+  from datasets.cars import cars_data
+  d = cars_data(batch_size=64, sess=sess)
+  image_batch_tensor, target_batch_tensor = d.build_train_data_tensor()
 
-init_op = tf.initialize_all_variables()
-sess.run(init_op)
-coord = tf.train.Coordinator()
-threads = tf.train.start_queue_runners(coord=coord, sess=sess)
-
-images_batch, labels_batch = sess.run([tensor_images, tensor_targets])
-print(images_batch.shape)
-print(labels_batch.shape)
+image_batch, target_batch = sess.run([image_batch_tensor, target_batch_tensor])
+print(image_batch.shape)
+print(target_batch.shape)
 """
 
 import tensorflow as tf
@@ -46,6 +39,7 @@ class cars_data:
   NUMBER_OF_CLASSES = 196
   TRAIN_SET_SIZE = 8041
   TEST_SET_SIZE = 8144
+
   IMAGE_HEIGHT = 75
   IMAGE_WIDTH = 100
   NUM_OF_CHANNELS = 3
@@ -54,7 +48,9 @@ class cars_data:
                filename_feed_size=200,
                filename_queue_capacity=800,
                batch_queue_capacity=1150,
-               min_after_dequeue=1150): # 100MB RAM ~=1150 images
+               min_after_dequeue=1150,   # 100MB RAM ~=1150 images
+               image_height=IMAGE_HEIGHT,
+               image_width=IMAGE_WIDTH):
     """ Downloads the data if necessary. """
     self.batch_size = batch_size
     self.filename_feed_size = filename_feed_size
@@ -62,6 +58,8 @@ class cars_data:
     self.batch_queue_capacity = batch_queue_capacity + 3 * batch_size # add some extra
     self.min_after_dequeue = min_after_dequeue
     self.sess = sess
+    self.IMAGE_HEIGHT = image_height
+    self.IMAGE_WIDTH = image_width
     cars.download_data()
 
   def build_train_data_tensor(self, shuffle=False, augmentation=False):
@@ -82,10 +80,10 @@ class cars_data:
     imagepath_input = tf.placeholder(tf.string, shape=[self.filename_feed_size])
     target_input = tf.placeholder(tf.float32, shape=[self.filename_feed_size, self.NUMBER_OF_CLASSES])
 
-    filename_queue = tf.FIFOQueue(self.filename_queue_capacity, [tf.string, tf.float32],
+    self.filename_queue = tf.FIFOQueue(self.filename_queue_capacity, [tf.string, tf.float32],
                                   shapes=[[], [self.NUMBER_OF_CLASSES]])
-    enqueue_op = filename_queue.enqueue_many([imagepath_input, target_input])
-    single_path, single_target = filename_queue.dequeue()
+    enqueue_op = self.filename_queue.enqueue_many([imagepath_input, target_input])
+    single_path, single_target = self.filename_queue.dequeue()
 
     file_content = tf.read_file(single_path)
     single_image = tf.image.decode_jpeg(file_content, channels=self.NUM_OF_CHANNELS)
@@ -125,7 +123,7 @@ class cars_data:
     def enqueue(sess):
       under = 0
       max = len(all_img_paths)
-      while True:
+      while not self.coord.should_stop():
         upper = under + self.filename_feed_size
         if upper <= max:
           curr_data = all_img_paths[under:upper]
@@ -150,14 +148,11 @@ class cars_data:
 
     return images_batch, target_batch
 
-  def __exit__(self, exc_type, exc_value, traceback):
+  def __del__(self):
+    self.close()
+
+  def close(self):
+    self.filename_queue.close(cancel_pending_enqueues=True)
     self.coord.request_stop()
     self.coord.join(self.threads)
-    self.sess.close()
-
-    """
-    coord.request_stop()
-    coord.join(threads)
-    sess.close()
-    """
 

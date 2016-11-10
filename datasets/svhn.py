@@ -1,10 +1,7 @@
-###############################################################################
-#
-# IDSIA, Research Project
-#
-# Author:       Imanol
+##############################################################################
+# Author:       Imanol Schlag (more info on ischlag.github.io)
 # Description:  SVHN input pipeline
-# Date:         03.11.2016
+# Date:         11.2016
 #
 #
 
@@ -12,16 +9,14 @@
 import tensorflow as tf
 sess = tf.Session()
 
-from datasets.svhn import svhn_data
-d = svhn_data(batch_size=256, sess=sess)
-tensor_images, tensor_targets = d.build_train_data_tensor()
+with tf.device('/cpu:0'):
+  from datasets.svhn import svhn_data
+  d = svhn_data(batch_size=256, sess=sess)
+  image_batch_tensor, target_batch_tensor = d.build_train_data_tensor()
 
-init_op = tf.initialize_all_variables()
-sess.run(init_op)
-coord = tf.train.Coordinator()
-threads = tf.train.start_queue_runners(coord=coord, sess=sess)
-
-images_batch, labels_batch = sess.run([tensor_images, tensor_targets])
+image_batch, target_batch = sess.run([image_batch_tensor, target_batch_tensor])
+print(image_batch.shape)
+print(target_batch.shape)
 """
 import tensorflow as tf
 import numpy as np
@@ -52,7 +47,7 @@ class svhn_data:
     self.batch_size = batch_size
     self.feed_size = feed_size
     self.feed_queue_capacity = feed_queue_capacity
-    self.batch_queue_capacity = batch_queue_capacity
+    self.batch_queue_capacity = batch_queue_capacity + 3 * batch_size
     self.min_after_dequeue = min_after_dequeue
     self.sess = sess
     svhn.download_data()
@@ -83,10 +78,10 @@ class svhn_data:
     image_input = tf.placeholder(tf.float32, shape=[self.feed_size, width, height, channels])
     target_input = tf.placeholder(tf.float32, shape=[self.feed_size, self.NUMBER_OF_CLASSES])
 
-    queue = tf.FIFOQueue(self.feed_queue_capacity, [tf.float32, tf.float32],
+    self.queue = tf.FIFOQueue(self.feed_queue_capacity, [tf.float32, tf.float32],
                          shapes=[[width, height, channels], [self.NUMBER_OF_CLASSES]])
-    enqueue_op = queue.enqueue_many([image_input, target_input])
-    image, target = queue.dequeue()
+    enqueue_op = self.queue.enqueue_many([image_input, target_input])
+    image, target = self.queue.dequeue()
 
     # Data Augmentation
     if augmentation:
@@ -98,23 +93,21 @@ class svhn_data:
     image = tf.sub(image, 0.5)
     image = tf.mul(image, 2.0)
 
-    images_batch, target_batch = tf.train.shuffle_batch([image, target],
-                                                        batch_size=self.batch_size,
-                                                        capacity=self.batch_queue_capacity,
-                                                        min_after_dequeue=self.min_after_dequeue)
-    #images_batch, target_batch = tf.train.batch([image, target],
-    #                                            batch_size=self.batch_size,
-    #                                            capacity=self.batch_queue_capacity)
-
-    #run_options = tf.RunOptions(timeout_in_ms=4000)
+    if shuffle:
+      images_batch, target_batch = tf.train.shuffle_batch([image, target],
+                                                          batch_size=self.batch_size,
+                                                          capacity=self.batch_queue_capacity,
+                                                          min_after_dequeue=self.min_after_dequeue)
+    else:
+      images_batch, target_batch = tf.train.batch([image, target],
+                                                  batch_size=self.batch_size,
+                                                  capacity=self.batch_queue_capacity)
 
     def enqueue(sess):
       under = 0
       max = len(raw_images)
-      while True:
-        #print("starting to write into queue")
+      while not self.coord.should_stop():
         upper = under + self.feed_size
-        #print("try to enqueue ", under, " to ", upper)
         if upper <= max:
           curr_data = raw_images[under:upper]
           curr_target = raw_targets[under:upper]
@@ -127,7 +120,6 @@ class svhn_data:
 
         sess.run(enqueue_op, feed_dict={image_input: curr_data,
                                         target_input: curr_target})
-        #print("added!")
 
     enqueue_thread = threading.Thread(target=enqueue, args=[self.sess])
 
@@ -139,9 +131,11 @@ class svhn_data:
 
     return images_batch, target_batch
 
-  def __exit__(self, exc_type, exc_value, traceback):
+  def __del__(self):
+    self.close()
+
+  def close(self):
+    self.queue.close(cancel_pending_enqueues=True)
     self.coord.request_stop()
     self.coord.join(self.threads)
-    self.sess.close()
-
 

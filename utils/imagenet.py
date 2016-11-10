@@ -1,20 +1,25 @@
+###############################################################################
+# Author:       Imanol Schlag (more info on ischlag.github.io)
+# Description:  Functions for loading the imagenet image paths and labels into memory.
+# Date:         11.2016
 #
-#
-#
+#  In order to download the imagenet data you need to look at
+#  utils/imagenet_download/run_me.sh
 #
 
 import tensorflow as tf
 import random
+import os
 
-train_dir = "data/imagenet/train/"
-validation_dir = "data/imagenet/validation/"
-labels_file = "data/imagenet/imagenet_lsvrc_2015_synsets.txt"
-metadata_file = "data/imagenet/imagenet_metadata.txt"
+train_dir         = "data/imagenet/train/"
+validation_dir    = "data/imagenet/validation/"
+labels_file       = "data/imagenet/imagenet_lsvrc_2015_synsets.txt"
+metadata_file     = "data/imagenet/imagenet_metadata.txt"
 bounding_box_file = "data/imagenet/imagenet_2012_bounding_boxes.csv"
 
 ###############################################################################
-# TensorFlow Inception Scripts (ported to python3)
-# scripts are from: https://github.com/tensorflow/models/blob/master/inception/inception/data/build_imagenet_data.py
+# Some TensorFlow Inception functions (ported to python3)
+# source: https://github.com/tensorflow/models/blob/master/inception/inception/data/build_imagenet_data.py
 
 def _find_image_files(data_dir, labels_file):
   """Build a list of all images files and labels in the data set.
@@ -196,6 +201,18 @@ class imagenet_data:
   val_filenames, val_synsets, val_labels = _find_image_files(validation_dir, labels_file)
   train_filenames, train_synsets, train_labels = _find_image_files(train_dir, labels_file)
   humans = _find_human_readable_labels(val_synsets, synset_to_human)
+
+def check_if_downloaded():
+  if os.path.exists(train_dir):
+    print("Train directory seems to exist")
+  else:
+    raise Exception("Train directory doesn't seem to exist.")
+
+  if os.path.exists(validation_dir):
+    print("Validation directory seems to exist")
+  else:
+    raise Exception("Validation directory doesn't seem to exist.")
+
 
 def load_class_names():
   return data.humans

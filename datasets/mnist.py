@@ -1,28 +1,28 @@
 ###############################################################################
-#
-# IDSIA, Research Project
-#
-# Author:       Imanol
+##############################################################################
+# Author:       Imanol Schlag (more info on ischlag.github.io)
 # Description:  MNIST input pipeline
-# Date:         01.11.2016
+# Date:         11.2016
 #
-#
+# Note: Only uses one queue,
 
 """ Usage:
-from datasets.mnist import mnist_data
-data = mnist_data(53)
-tensor_images, tensor_labels = data.build_train_data_tensor()
-
 import tensorflow as tf
+
+with tf.device('/cpu:0'):
+  from datasets.mnist import mnist_data
+  data = mnist_data(53)
+  image_batch_tensor, target_batch_tensor = data.build_train_data_tensor()
+
 sess = tf.Session()
 init_op = tf.initialize_all_variables()
 sess.run(init_op)
 coord = tf.train.Coordinator()
 threads = tf.train.start_queue_runners(coord=coord, sess=sess)
 
-images_batch, labels_batch = sess.run([tensor_images, tensor_labels])
-print(images_batch.shape)
-print(labels_batch.shape)
+image_batch, target_batch = sess.run([image_batch_tensor, target_batch_tensor])
+print(image_batch.shape)
+print(target_batch.shape)
 """
 
 import tensorflow as tf
