@@ -2,7 +2,7 @@
 
 Use these TensorFlow(v0.11) pipelines to automatically download and easily fetch batches of data and labels from some of the most used datasets in Deep Learning. The implementations are threaded, efficient, can be randomized and also include large datasets such as imagenet. 
 
-## Current datasets are supported
+### Supported Datasets
 - MNIST
 - CIFAR-10
 - CIFAR-100
@@ -12,7 +12,7 @@ Use these TensorFlow(v0.11) pipelines to automatically download and easily fetch
 
 (more datasets will be added soon ...)
 
-## Usage Example
+### Example
 ```python
 import tensorflow as tf
 sess = tf.Session()
@@ -27,7 +27,7 @@ print(image_batch.shape)
 print(target_batch.shape)
 ```
 
-## Train Script Template
+### Train Script Template
 A CNN training script template is provided with the following features:
 - easy switchin of datasets
 - separate training and testing streams
