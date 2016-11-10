@@ -22,11 +22,16 @@ with tf.device('/cpu:0'):
   d = svhn_data(batch_size=256, sess=sess)
   image_batch_tensor, target_batch_tensor = d.build_train_data_tensor()
 
-image_batch, target_batch = sess.run([image_batch_tensor, target_batch_tensor])
-# logits = model(image_batch, target_batch)
-# ...
-print(image_batch.shape)
-print(target_batch.shape)
+for i in range(5):
+  print("batch ", i)
+  image_batch, target_batch = sess.run([image_batch_tensor, target_batch_tensor])
+  # logits = model(image_batch, target_batch)
+  # ...
+  print(image_batch.shape)
+  print(target_batch.shape)
+  
+d.close()
+sess.close()
 ```
 
 ### Train Script Template
