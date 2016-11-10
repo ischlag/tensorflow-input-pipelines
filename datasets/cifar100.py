@@ -30,7 +30,8 @@ class cifar100_data:
 
   TRAIN_SET_SIZE = 50000
   TEST_SET_SIZE =  10000
-  IMAGE_SIZE = 32
+  IMAGE_WIDTH = 32
+  IMAGE_HEIGHT = 32
   NUM_OF_CHANNELS = 3
 
   def __init__(self, batch_size):

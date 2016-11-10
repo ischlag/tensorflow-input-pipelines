@@ -41,7 +41,8 @@ class mnist_data:
   """
   NUM_THREADS = 8
   NUMBER_OF_CLASSES = 10
-  IMAGE_SIZE = 28
+  IMAGE_WIDTH = 28
+  IMAGE_HEIGHT = 28
   NUM_OF_CHANNELS = 1
 
   def __init__(self, batch_size):

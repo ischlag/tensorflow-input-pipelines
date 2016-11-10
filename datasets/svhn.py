@@ -43,7 +43,8 @@ class svhn_data:
 
   TRAIN_SET_SIZE = 73257
   TEST_SET_SIZE =  26032
-  IMAGE_SIZE = 32
+  IMAGE_WIDTH = 32
+  IMAGE_HEIGHT = 32
   NUM_OF_CHANNELS = 3
 
   def __init__(self, batch_size, sess, feed_size=200, feed_queue_capacity=800, batch_queue_capacity=5, min_after_dequeue=4):
