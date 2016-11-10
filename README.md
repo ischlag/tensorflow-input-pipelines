@@ -23,6 +23,8 @@ with tf.device('/cpu:0'):
   image_batch_tensor, target_batch_tensor = d.build_train_data_tensor()
 
 image_batch, target_batch = sess.run([image_batch_tensor, target_batch_tensor])
+# logits = model(image_batch, target_batch)
+# ...
 print(image_batch.shape)
 print(target_batch.shape)
 ```
