@@ -43,8 +43,8 @@ LEARNING_RATE_DECAY_FACTOR = 2.0
 sess = tf.Session()
 
 # SIMPLY UNCOMMENT THE DATASET YOU WANT TO RUN ON. NOTHING ELSE IS NEEDED.
-#data = mnist_data(batch_size=BATCH_SIZE)
-data = cifar10_data(batch_size=BATCH_SIZE, sess=sess)
+data = mnist_data(batch_size=BATCH_SIZE)
+#data = cifar10_data(batch_size=BATCH_SIZE, sess=sess)
 #data = cifar100_data(batch_size=BATCH_SIZE, sess=sess)
 #data = imagenet_data(batch_size=64, sess=sess) # you need to use the download sh script in utils/imagenet_download/
 #data = svhn_data(batch_size=BATCH_SIZE, sess=sess)
