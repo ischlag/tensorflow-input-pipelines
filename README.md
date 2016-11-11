@@ -36,13 +36,14 @@ sess.close()
 ```
 
 ### Installation
+```
 mkvirtualenv env
 git clone https://github.com/ischlag/tensorflow-input-pipelines.git
 cd tensorflow-input-pipelines
 (env) pip3 install -r pip3_requirements.txt
 \# install TensorFlow yourself
 python example_train.py
-
+```
 
 ### Train Script Template
 A CNN training script template is provided with the following features:
