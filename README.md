@@ -8,7 +8,8 @@ Use these TensorFlow(v0.11) pipelines to automatically download and easily fetch
 - CIFAR-100
 - SVHN
 - Stanford Cars 196
-- imagenet (no automatic data download, but a shell script is provided in utils/imagenet_download/)
+- Imagenet (no automatic data download, but a shell script is provided in utils/imagenet_download/)
+- Penn Treebank
 
 (more datasets will be added soon ...)
 
