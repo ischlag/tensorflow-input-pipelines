@@ -1,0 +1,6 @@
+numpy==1.11.2
+pickleshare==0.7.4
+protobuf==3.0.0
+scipy==0.18.1
+six==1.10.0
+tensorflow==0.11.0

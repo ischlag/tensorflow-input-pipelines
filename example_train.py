@@ -33,7 +33,7 @@ ONLY_EVAL = False # If True, no training is performed
 # ---
 EPOCHS = 500 # max number of epochs if the network never converges
 learning_rate = 0.01
-DECREASE_LEARNING_RATE_AFTER_N_BAD_EPOCHS = 15
+DECREASE_LEARNING_RATE_AFTER_N_BAD_EPOCHS = 4
 DECREASE_LEARNING_RATE_N_TIMES = 3
 SAVE_AFTER_MIN_N_EPOCHS = -1
 LEARNING_RATE_DECAY_FACTOR = 2.0
@@ -46,6 +46,7 @@ sess = tf.Session()
 #data = mnist_data(batch_size=BATCH_SIZE)
 data = cifar10_data(batch_size=BATCH_SIZE, sess=sess)
 #data = cifar100_data(batch_size=BATCH_SIZE, sess=sess)
+#data = imagenet_data(batch_size=64, sess=sess) # you need to use the download sh script in utils/imagenet_download/
 #data = svhn_data(batch_size=BATCH_SIZE, sess=sess)
 #data = cars_data(batch_size=BATCH_SIZE, sess=sess)
 
