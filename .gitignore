@@ -1,3 +1,11 @@
+# logs and downloaded data
 logs/
 data/
+
+# pycharm
 .idea/
+
+# compiled
+__pycache__/
+*.py[cod]
+*$py.class
