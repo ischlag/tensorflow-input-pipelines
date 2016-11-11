@@ -84,8 +84,10 @@ def maybe_download_and_extract(url, download_dir):
         print("Extracting finished. Cleaning up.")
         os.remove(file_path)
         print("Done.")
+        return True
     else:
         print("Data has apparently already been downloaded and unpacked.")
+        return False
 
 ########################################################################
 
@@ -124,8 +126,10 @@ def maybe_download(url, download_dir):
         print()
         print("Download finished.")
         print("Done.")
+        return True
     else:
         print("Data has apparently already been downloaded and unpacked.")
+        return False
 
 ########################################################################
 

@@ -197,18 +197,18 @@ def print_label_accuracy(top_1_res, top_n_res):
                                                                                top_n_percent))
 
 def next_feed_dic(image_batch, label_batch, train=True):
-	"""Fetches a mini-batch of images and labels and builds a feed-dictonary"""
-	with tf.device('/cpu:0'):
-		curr_image_batch, curr_label_batch = sess.run([image_batch, label_batch])
+  """Fetches a mini-batch of images and labels and builds a feed-dictonary"""
+  with tf.device('/cpu:0'):
+    curr_image_batch, curr_label_batch = sess.run([image_batch, label_batch])
 
-		feed_dict = {
-			input_image_batch: curr_image_batch,
-			input_label_batch: curr_label_batch,
-			batch_size: curr_image_batch.shape[0],
-			is_training.name: train,
-			lr.name: learning_rate
-		}
-		return feed_dict
+    feed_dict = {
+      input_image_batch: curr_image_batch,
+      input_label_batch: curr_label_batch,
+      batch_size: curr_image_batch.shape[0],
+      is_training.name: train,
+      lr.name: learning_rate
+    }
+    return feed_dict
 
 def eval_accuracy(top_1_correct, top_n_correct, label_batch_id, predictions, batch_size, set_size, image_batch,
                   label_batch, summary_op, global_step):
