@@ -35,14 +35,94 @@ d.close()
 sess.close()
 ```
 
-### Installation
+### Installation and Running the Cifar-100 Example
 ```
-mkvirtualenv env
-git clone https://github.com/ischlag/tensorflow-input-pipelines.git
-cd tensorflow-input-pipelines
-(env) pip3 install -r pip3_requirements.txt
-# install TensorFlow yourself ...
-python example_train.py
+schlag@box:~/MyStuff/input_pipelines$ mkvirtualenv $(pwd | awk '{print $1"/env"}')
+Using base prefix '/usr'
+New python executable in /home/schlag/MyStuff/input_pipelines/env/bin/python3
+Also creating executable in /home/schlag/MyStuff/input_pipelines/env/bin/python
+Installing setuptools, pip, wheel...done.
+schlag@box:~/MyStuff/input_pipelines$ source env/bin/activate
+(env) schlag@box:~/MyStuff/input_pipelines$ pip3 install -r pip3_requirements.txt 
+Collecting numpy==1.11.2 (from -r pip3_requirements.txt (line 1))
+  Using cached numpy-1.11.2-cp35-cp35m-manylinux1_x86_64.whl
+Collecting pickleshare==0.7.4 (from -r pip3_requirements.txt (line 2))
+  Using cached pickleshare-0.7.4-py2.py3-none-any.whl
+Collecting protobuf==3.0.0 (from -r pip3_requirements.txt (line 3))
+  Using cached protobuf-3.0.0-py2.py3-none-any.whl
+Collecting scipy==0.18.1 (from -r pip3_requirements.txt (line 4))
+  Using cached scipy-0.18.1-cp35-cp35m-manylinux1_x86_64.whl
+Collecting six==1.10.0 (from -r pip3_requirements.txt (line 5))
+  Using cached six-1.10.0-py2.py3-none-any.whl
+Requirement already satisfied: setuptools in ./env/lib/python3.5/site-packages (from protobuf==3.0.0->-r pip3_requirements.txt (line 3))
+Installing collected packages: numpy, pickleshare, six, protobuf, scipy
+Successfully installed numpy-1.11.2 pickleshare-0.7.4 protobuf-3.0.0 scipy-0.18.1 six-1.10.0
+(env) schlag@box:~/MyStuff/input_pipelines$ pip3 install ../tf-builds/tensorflow-0.11.0rc2-cp35-cp35m-linux_x86_64.whl 
+Processing /home/schlag/MyStuff/tf-builds/tensorflow-0.11.0rc2-cp35-cp35m-linux_x86_64.whl
+Requirement already satisfied: wheel>=0.26 in ./env/lib/python3.5/site-packages (from tensorflow==0.11.0rc2)
+Requirement already satisfied: six>=1.10.0 in ./env/lib/python3.5/site-packages (from tensorflow==0.11.0rc2)
+Collecting protobuf==3.1.0 (from tensorflow==0.11.0rc2)
+  Using cached protobuf-3.1.0-py2.py3-none-any.whl
+Requirement already satisfied: numpy>=1.11.0 in ./env/lib/python3.5/site-packages (from tensorflow==0.11.0rc2)
+Requirement already satisfied: setuptools in ./env/lib/python3.5/site-packages (from protobuf==3.1.0->tensorflow==0.11.0rc2)
+Installing collected packages: protobuf, tensorflow
+  Found existing installation: protobuf 3.0.0
+    Uninstalling protobuf-3.0.0:
+      Successfully uninstalled protobuf-3.0.0
+Successfully installed protobuf-3.1.0 tensorflow-0.11.0rc2
+(env) schlag@box:~/MyStuff/input_pipelines$ python cifar-100_example.py 
+I tensorflow/stream_executor/dso_loader.cc:128] successfully opened CUDA library libcublas.so.8.0.27 locally
+I tensorflow/stream_executor/dso_loader.cc:128] successfully opened CUDA library libcudnn.so.5.1.5 locally
+I tensorflow/stream_executor/dso_loader.cc:128] successfully opened CUDA library libcufft.so.8.0.27 locally
+I tensorflow/stream_executor/dso_loader.cc:128] successfully opened CUDA library libcuda.so.1 locally
+I tensorflow/stream_executor/dso_loader.cc:128] successfully opened CUDA library libcurand.so.8.0.27 locally
+I tensorflow/core/common_runtime/gpu/gpu_device.cc:885] Found device 0 with properties: 
+name: GeForce GTX 1080
+major: 6 minor: 1 memoryClockRate (GHz) 1.7335
+pciBusID 0000:05:00.0
+Total memory: 7.92GiB
+Free memory: 6.63GiB
+I tensorflow/core/common_runtime/gpu/gpu_device.cc:906] DMA: 0 
+I tensorflow/core/common_runtime/gpu/gpu_device.cc:916] 0:   Y 
+I tensorflow/core/common_runtime/gpu/gpu_device.cc:975] Creating TensorFlow device (/gpu:0) -> (device: 0, name: GeForce GTX 1080, pci bus id: 0000:05:00.0)
+Loading CIFAR-100 data
+- Download progress: 100.0%
+Download finished. Extracting files.
+Extracting finished. Cleaning up.
+Done.
+Loading data: data/CIFAR-100/cifar-100-python/train
+batch  0
+(256, 32, 32, 3)
+(256, 100)
+batch  1
+(256, 32, 32, 3)
+(256, 100)
+batch  2
+(256, 32, 32, 3)
+(256, 100)
+batch  3
+(256, 32, 32, 3)
+(256, 100)
+batch  4
+(256, 32, 32, 3)
+(256, 100)
+batch  5
+(256, 32, 32, 3)
+(256, 100)
+batch  6
+(256, 32, 32, 3)
+(256, 100)
+batch  7
+(256, 32, 32, 3)
+(256, 100)
+batch  8
+(256, 32, 32, 3)
+(256, 100)
+batch  9
+(256, 32, 32, 3)
+(256, 100)
+done!
+
 ```
 
 ### Train Script Template
