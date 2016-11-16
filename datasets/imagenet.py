@@ -60,6 +60,7 @@ class imagenet_data:
                image_height=IMAGE_HEIGHT,
                image_width=IMAGE_WIDTH):
     """ Downloads the data if necessary. """
+    print("Loading imagenet data")
     self.batch_size = batch_size
     self.filename_feed_size = filename_feed_size
     self.filename_queue_capacity = filename_queue_capacity

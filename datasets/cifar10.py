@@ -51,6 +51,7 @@ class cifar10_data:
                batch_queue_capacity=1000,
                min_after_dequeue=1000):
     """ Downloads the cifar10 data if necessary. """
+    print("Loading CIFAR-10 data")
     self.batch_size = batch_size
     self.feed_size = feed_size
     self.feed_queue_capacity = feed_queue_capacity

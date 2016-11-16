@@ -47,6 +47,7 @@ class mnist_data:
 
   def __init__(self, batch_size):
     """ Downloads the mnist data if necessary. """
+    print("Loading MNIST data")
     self.batch_size = batch_size
     self.mnist = input_data.read_data_sets('data/MNIST', one_hot=True)
 

@@ -44,6 +44,7 @@ class svhn_data:
 
   def __init__(self, batch_size, sess, feed_size=200, feed_queue_capacity=800, batch_queue_capacity=5, min_after_dequeue=4):
     """ Downloads the cifar100 data if necessary. """
+    print("Loading SVHN data")
     self.batch_size = batch_size
     self.feed_size = feed_size
     self.feed_queue_capacity = feed_queue_capacity

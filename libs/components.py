@@ -16,22 +16,29 @@ def dense(data,
           dropout=True):
   """ Fully-connected network layer."""
   shape = data.get_shape().as_list()
+  print("DENSE IN: ",  data)
   with tf.variable_scope(scope):
-    w = tf.get_variable('dense-weights',
-                        [shape[1], n_units],
-                        initializer=initializer)
+    #w = tf.get_variable('dense-weights',
+    #                    [shape[1], n_units],
+    #                    initializer=initializer)
+    w = tf.Variable(tf.random_normal([shape[1], n_units], stddev=0.01),
+                    name='dense-weights')
     b = tf.get_variable('dense-bias',
                         [n_units],
                         initializer=tf.zeros_initializer)
     dense = activation(tf.matmul(data, w) + b)
     if dropout:
       dense = tf.cond(phase_train, lambda: tf.nn.dropout(dense, 0.5), lambda: dense)
+
+    print("DENSE OUT:", dense)
     return dense
 
 def flatten(pre):
   """ Flattens the 2d kernel images into a single vector. Ignore the batch dimensionality."""
   pre_shape = pre.get_shape().as_list()
+  print("FLAT IN:  ", pre)
   flat = tf.reshape(pre, [pre_shape[0], pre_shape[1] * pre_shape[2] * pre_shape[3]])
+  print("FLAT OUT: ", flat)
   return flat
 
 def conv2d(data, 
@@ -44,9 +51,12 @@ def conv2d(data,
            padding='SAME'):
   """ Convolutional layer implementation without an activation function"""
   with tf.variable_scope(scope):
-    w = tf.get_variable('conv-weights',
-                        [k_h, k_w, data.get_shape()[-1], n_filters],
-                        initializer=initializer)
+    print("CONV IN:  ", data)
+    #w = tf.get_variable('conv-weights',
+    #                    [k_h, k_w, data.get_shape()[-1], n_filters],
+    #                    initializer=initializer)
+    w = tf.Variable(tf.random_normal([int(k_h), int(k_w), int(data.get_shape()[-1]), int(n_filters)], stddev=0.01),
+                    name='conv-weights')
     conv = tf.nn.conv2d(data, w,
                         strides=[1, stride_h, stride_w, 1],
                         padding=padding)
@@ -54,6 +64,7 @@ def conv2d(data,
                         [n_filters],
                         initializer=tf.zeros_initializer)
     conv = tf.nn.bias_add(conv, b)
+    print("CONV OUT: ", conv)
     return conv
 
 
@@ -71,6 +82,7 @@ def batch_norm(x, n_out, phase_train, scope='bn'):
   Note:
     Source is http://stackoverflow.com/questions/33949786/how-could-i-use-batch-normalization-in-tensorflow
   """
+  #print("BNORM IN: ", x)
   with tf.variable_scope(scope):
     beta = tf.Variable(tf.constant(0.0, shape=[n_out]),
                         name='beta', trainable=True)
@@ -88,4 +100,6 @@ def batch_norm(x, n_out, phase_train, scope='bn'):
                         mean_var_with_update,
                         lambda: (ema.average(batch_mean), ema.average(batch_var)))
     normed = tf.nn.batch_normalization(x, mean, var, beta, gamma, 1e-3)
+
+  #print("BNORM OUT:", normed)
   return normed

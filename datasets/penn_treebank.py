@@ -41,6 +41,7 @@ class penn_treebank_data:
 
   def __init__(self, batch_size, num_steps):   # 100MB RAM ~=1150 images
     """ Downloads the data if necessary. """
+    print("Loading penn treebank data")
     self.batch_size = batch_size
     self.num_steps = num_steps
     penn_treebank.download_data()
