@@ -1,6 +1,7 @@
 # logs and downloaded data
 logs/
 data/
+env/
 
 # pycharm
 .idea/
