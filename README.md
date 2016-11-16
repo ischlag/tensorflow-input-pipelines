@@ -125,6 +125,92 @@ done!
 
 ```
 
+
+### Download the Imagenet Data
+You need to use the supplied shell script in order to download the imagenet data. This can take a long time. The train archive is almost 150GB in size.
+
+```
+(env) schlag@box:~/MyStuff/input_pipelines$ cd utils/imagenet_download/
+(env) schlag@box:~/MyStuff/input_pipelines/utils/imagenet_download$ sh run_me.sh
+** snip (this will take a while)  **
+(env) schlag@box:~/MyStuff/input_pipelines/utils/imagenet_download$ cd ../../
+(env) schlag@box:~/MyStuff/input_pipelines$ python imagenet_example.py
+I tensorflow/stream_executor/dso_loader.cc:128] successfully opened CUDA library libcublas.so.8.0.27 locally
+I tensorflow/stream_executor/dso_loader.cc:128] successfully opened CUDA library libcudnn.so.5.1.5 locally
+I tensorflow/stream_executor/dso_loader.cc:128] successfully opened CUDA library libcufft.so.8.0.27 locally
+I tensorflow/stream_executor/dso_loader.cc:128] successfully opened CUDA library libcuda.so.1 locally
+I tensorflow/stream_executor/dso_loader.cc:128] successfully opened CUDA library libcurand.so.8.0.27 locally
+I tensorflow/core/common_runtime/gpu/gpu_device.cc:885] Found device 0 with properties: 
+name: GeForce GTX 1080
+major: 6 minor: 1 memoryClockRate (GHz) 1.7335
+pciBusID 0000:05:00.0
+Total memory: 7.92GiB
+Free memory: 6.61GiB
+I tensorflow/core/common_runtime/gpu/gpu_device.cc:906] DMA: 0 
+I tensorflow/core/common_runtime/gpu/gpu_device.cc:916] 0:   Y 
+I tensorflow/core/common_runtime/gpu/gpu_device.cc:975] Creating TensorFlow device (/gpu:0) -> (device: 0, name: GeForce GTX 1080, pci bus id: 0000:05:00.0)
+Successfully read 615299 bounding boxes across 544546 images.
+Determining list of input files and labels from data/imagenet/validation/.
+Finished finding files in 100 of 1000 classes.
+Finished finding files in 200 of 1000 classes.
+Finished finding files in 300 of 1000 classes.
+Finished finding files in 400 of 1000 classes.
+Finished finding files in 500 of 1000 classes.
+Finished finding files in 600 of 1000 classes.
+Finished finding files in 700 of 1000 classes.
+Finished finding files in 800 of 1000 classes.
+Finished finding files in 900 of 1000 classes.
+Finished finding files in 1000 of 1000 classes.
+Found 50000 JPEG files across 1000 labels inside data/imagenet/validation/.
+Determining list of input files and labels from data/imagenet/train/.
+Finished finding files in 100 of 1000 classes.
+Finished finding files in 200 of 1000 classes.
+Finished finding files in 300 of 1000 classes.
+Finished finding files in 400 of 1000 classes.
+Finished finding files in 500 of 1000 classes.
+Finished finding files in 600 of 1000 classes.
+Finished finding files in 700 of 1000 classes.
+Finished finding files in 800 of 1000 classes.
+Finished finding files in 900 of 1000 classes.
+Finished finding files in 1000 of 1000 classes.
+Found 1281167 JPEG files across 1000 labels inside data/imagenet/train/.
+Loading imagenet data
+Train directory seems to exist
+Validation directory seems to exist
+batch  0
+(64, 299, 299, 3)
+(64, 1000)
+batch  1
+(64, 299, 299, 3)
+(64, 1000)
+batch  2
+(64, 299, 299, 3)
+(64, 1000)
+batch  3
+(64, 299, 299, 3)
+(64, 1000)
+batch  4
+(64, 299, 299, 3)
+(64, 1000)
+batch  5
+(64, 299, 299, 3)
+(64, 1000)
+batch  6
+(64, 299, 299, 3)
+(64, 1000)
+batch  7
+(64, 299, 299, 3)
+(64, 1000)
+batch  8
+(64, 299, 299, 3)
+(64, 1000)
+batch  9
+(64, 299, 299, 3)
+(64, 1000)
+done!
+
+```
+
 ### Train Script Template
 A CNN training script template is provided with the following features:
 - easy switchin of datasets

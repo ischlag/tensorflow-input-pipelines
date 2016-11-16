@@ -13,42 +13,46 @@
 # Run this shell script.
 
 # download bounding boxes
-wget "http://www.image-net.org/challenges/LSVRC/2012/nnoupb/ILSVRC2012_bbox_train_v2.tar.gz" -O "./bounding_boxes/annotations.tar.gz"
+OUTDIR="../../data/imagenet"
+echo "Saving imagenet data to $OUTDIR"
+mkdir -p "${OUTDIR}"
+wget -nc "http://www.image-net.org/challenges/LSVRC/2012/nnoupb/ILSVRC2012_bbox_train_v2.tar.gz" -O "${OUTDIR}/bounding_boxes/annotations.tar.gz"
 
 # extract bounding box annotations
-tar xzf "./bounding_boxes/annotations.tar.gz" -C "./bounding_boxes"
+tar xzf "${OUTDIR}/bounding_boxes/annotations.tar.gz" -C "${OUTDIR}/bounding_boxes"
 
 # download validation data
-wget -nd -c "http://www.image-net.org/challenges/LSVRC/2012/nnoupb/ILSVRC2012_img_val.tar"
+wget -nd -c "http://www.image-net.org/challenges/LSVRC/2012/nnoupb/ILSVRC2012_img_val.tar" -O "${OUTDIR}/ILSVRC2012_img_val.tar"
 
 # extract validation data
-tar xf "ILSVRC2012_img_val.tar" -C "./validation/"
+mkdir -p "${OUTDIR}/validation/"
+tar xf "${OUTDIR}/ILSVRC2012_img_val.tar" -C "${OUTDIR}/validation/"
 
 # download train data
-wget -nd -c "http://www.image-net.org/challenges/LSVRC/2012/nnoupb/ILSVRC2012_img_train.tar"
+wget -nd -c "http://www.image-net.org/challenges/LSVRC/2012/nnoupb/ILSVRC2012_img_train.tar" -O "${OUTDIR}/ILSVRC2012_img_train.tar"
 
 # extract individual train tar files
-wget -nc "https://github.com/tensorflow/models/blob/master/inception/inception/data/imagenet_lsvrc_2015_synsets.txt"
-SYNSET_FILE="imagenet_lsvrc_2015_synsets.txt"
+SYNSET_FILE="${OUTDIR}/imagenet_lsvrc_2015_synsets.txt"
+wget -N "https://raw.githubusercontent.com/tensorflow/models/master/inception/inception/data/imagenet_lsvrc_2015_synsets.txt" -O "${SYNSET_FILE}"
 while read SYNSET; do
   echo "Processing: ${SYNSET}"
-  mkdir -p "./train/${SYNSET}"
-  rm -rf "./train/${SYNSET}/*"
+  mkdir -p "${OUTDIR}/train/${SYNSET}"
+  rm -rf "${OUTDIR}/train/${SYNSET}/*"
 
-  tar xf "ILSVRC2012_img_train.tar" "${SYNSET}.tar"
-  tar xf "${SYNSET}.tar" -C "./train/${SYNSET}/"
+  tar xf "${OUTDIR}/ILSVRC2012_img_train.tar" "${SYNSET}.tar"
+  tar xf "${SYNSET}.tar" -C "${OUTDIR}/train/${SYNSET}/"
   rm -f "${SYNSET}.tar"
 
   echo "Finished processing: ${SYNSET}"
 done < "${SYNSET_FILE}"
 
 # put validation data into directories just as the training data
-wget -nc "https://github.com/tensorflow/models/blob/master/inception/inception/data/imagenet_2012_validation_synset_labels.txt"
-python preprocess_imagenet_validation_data.py "./validation/" "imagenet_2012_validation_synset_labels.txt"
+wget -N "https://raw.githubusercontent.com/tensorflow/models/master/inception/inception/data/imagenet_2012_validation_synset_labels.txt" -O "${OUTDIR}/imagenet_2012_validation_synset_labels.txt"
+python preprocess_imagenet_validation_data.py "${OUTDIR}/validation/" "${OUTDIR}/imagenet_2012_validation_synset_labels.txt"
 
 # extract bounding box infor into an xml file
-python process_bounding_boxes.py "./bounding_boxes/" "imagenet_lsvrc_2015_synsets.txt"
-
+python process_bounding_boxes.py "${OUTDIR}/bounding_boxes/" "${OUTDIR}/imagenet_lsvrc_2015_synsets.txt"
+mv imagenet_2012_bounding_boxes.csv "${OUTDIR}/imagenet_2012_bounding_boxes.csv"
 # download the metadata text file
-wget -nc "https://github.com/tensorflow/models/blob/master/inception/inception/data/imagenet_metadata.txt"
+wget -N "https://raw.githubusercontent.com/tensorflow/models/master/inception/inception/data/imagenet_metadata.txt" -O "${OUTDIR}/imagenet_metadata.txt"
 
