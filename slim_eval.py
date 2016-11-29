@@ -17,8 +17,8 @@ log_dir = "logs/cifar10/1/"
 eval_dir = "logs/cifar10/1_eval/"
 batch_size = 64
 num_classes = 10
-epoch_in_steps = int(10000.0/batch_size)
-max_step = epoch_in_steps * 15
+epoch_size = 10000.0
+num_iter = int(math.ceil(epoch_size/batch_size))
 eval_interval_secs = 10
 run_once = False
 
@@ -74,7 +74,6 @@ def _eval_model_checkpoint(model_checkpoint_path):
     print("Couldn't find checkpoint to restore from. Exiting.")
     return
 
-  num_iter = int(math.ceil(float(50000.0) / batch_size))
   # Counts the number of correct predictions.
   count_top_1 = 0.0
   count_top_5 = 0.0

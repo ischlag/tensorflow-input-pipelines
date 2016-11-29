@@ -109,7 +109,4 @@ for step in range(max_step):
     checkpoint_path = os.path.join(log_dir, 'model.ckpt')
     saver.save(sess, checkpoint_path, global_step=global_step)
 
-
-
 print("done!")
-sess.close()
