@@ -58,6 +58,7 @@ class cifar100_data:
     cifar100.maybe_download_and_extract()
 
   def build_train_data_tensor(self, shuffle=False, augmentation=False):
+
     images, _, targets = cifar100.load_training_data()
     return self.__build_generic_data_tensor(images,
                                             targets,
@@ -65,6 +66,7 @@ class cifar100_data:
                                             augmentation)
 
   def build_test_data_tensor(self, shuffle=False, augmentation=False):
+
     images, _, targets = cifar100.load_test_data()
     return self.__build_generic_data_tensor(images,
                                             targets,
@@ -141,3 +143,4 @@ class cifar100_data:
     self.queue.close(cancel_pending_enqueues=True)
     self.coord.request_stop()
     self.coord.join(self.threads)
+    self.sess.close()
