@@ -4,19 +4,21 @@ import tensorflow.contrib.slim as slim
 def conv_block(data, n_filter, is_training, scope, stride=1):
   """An ConvBlock is a repetitive composition used in the model."""
   with tf.variable_scope(scope):
-    conv1 = slim.layers.conv2d(data, n_filter, [3, 3], stride=stride, padding='SAME', activation_fn=None)
-    norm1 = slim.layers.batch_norm(conv1, scale=False, decay=0.5, epsilon=0.001, is_training=is_training)
+    conv1 = slim.layers.conv2d(data, n_filter, [3, 3], stride=stride, padding='SAME', activation_fn=None,
+                               weights_initializer=tf.random_normal_initializer(stddev=0.01))
+    norm1 = slim.layers.batch_norm(conv1, scale=False, decay=0.9, epsilon=0.001, is_training=is_training)
     relu1 = tf.nn.relu(norm1)
 
-    conv2 = slim.layers.conv2d(relu1, n_filter, [3, 3], stride=stride, padding='SAME', activation_fn=None)
-    norm2 = slim.layers.batch_norm(conv2, scale=False, decay=0.5, epsilon=0.001, is_training=is_training)
+    conv2 = slim.layers.conv2d(relu1, n_filter, [3, 3], stride=stride, padding='SAME', activation_fn=None,
+                               weights_initializer=tf.random_normal_initializer(stddev=0.01))
+    norm2 = slim.layers.batch_norm(conv2, scale=False, decay=0.9, epsilon=0.001, is_training=is_training)
     relu2 = tf.nn.relu(norm2)
 
     return relu2
 
-def inference(images, num_classes, is_training):
+def inference(x, num_classes, is_training):
   """Defines the architecture and returns logits."""
-  block1 = conv_block(images, 64, is_training, "block1")
+  block1 = conv_block(x, 64, is_training, "block1")
   pool1 = tf.nn.max_pool(block1, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding="SAME")
 
   block2 = conv_block(pool1, 128, is_training, "block2")

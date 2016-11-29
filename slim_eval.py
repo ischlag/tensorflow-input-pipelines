@@ -1,8 +1,6 @@
-
 import tensorflow as tf
 import tensorflow.contrib.slim as slim
 import numpy as np
-import os
 import math
 import time
 from datetime import datetime
@@ -13,7 +11,7 @@ from datasets.cifar100 import cifar100_data
 from libs import custom_ops
 from nets import bn_conv
 
-log_dir = "logs/cifar10/3/"
+log_dir = "logs/cifar10/2/"
 batch_size = 64
 num_classes = 10
 run_once = False
@@ -30,14 +28,18 @@ with tf.device('/cpu:0'):
 ## Model
 #logits = bn_conv.inference(image_batch_tensor, num_classes=num_classes, is_training=False)
 from tensorflow.contrib.slim.nets import resnet_v2
-with slim.arg_scope(custom_ops.resnet_arg_scope(is_training=True)):
-  net, end_points = resnet_v2.resnet_v2_50(image_batch_tensor,
+with slim.arg_scope(custom_ops.resnet_arg_scope(is_training=False)):
+  net, end_points = resnet_v2.resnet_v2_101(image_batch_tensor,
                                               num_classes=num_classes,
                                               global_pool=True)# reduce output to rank 2 (not working)
 logits = tf.reduce_mean(net, [1, 2], name='pool5', keep_dims=False)
 
 ## Losses and Accuracies
-classification_loss = slim.losses.softmax_cross_entropy(logits, target_batch_tensor)
+cross_entropy = tf.nn.softmax_cross_entropy_with_logits(logits,
+                                                        tf.cast(target_batch_tensor, tf.float32),
+                                                        name="cross-entropy")
+loss = tf.reduce_mean(cross_entropy, name='loss')
+
 top_1 = tf.nn.in_top_k(logits, tf.argmax(target_batch_tensor, 1), 1)
 top_5 = tf.nn.in_top_k(logits, tf.argmax(target_batch_tensor, 1), 5)
 
@@ -45,7 +47,7 @@ top_1_batch_accuracy = tf.reduce_sum(tf.cast(top_1, tf.float32)) * 100.0 / batch
 top_5_batch_accuracy = tf.reduce_sum(tf.cast(top_5, tf.float32)) * 100.0 / batch_size
 
 ## Summaries
-tf.scalar_summary('test/classification_loss', classification_loss)
+tf.scalar_summary('test/loss', loss)
 tf.scalar_summary('test/top_1_batch_acc', top_1_batch_accuracy)
 tf.scalar_summary('test/top_5_batch_acc', top_5_batch_accuracy)
 summary_op = tf.merge_all_summaries()
@@ -87,7 +89,7 @@ def _eval_model_checkpoint(sess, model_checkpoint_path, saver, summary_writer, t
       count_top_1 += np.sum(top_1_val)
       count_top_5 += np.sum(top_5_val)
       step += 1
-      if step % 20 == 0:
+      if step % 40 == 0:
         duration = time.time() - start_time
         sec_per_batch = duration / 20.0
         examples_per_sec = batch_size / sec_per_batch
@@ -96,16 +98,16 @@ def _eval_model_checkpoint(sess, model_checkpoint_path, saver, summary_writer, t
                               examples_per_sec, sec_per_batch))
         start_time = time.time()
 
-    # Compute precision @ 1.
-    precision_at_1 = count_top_1 / total_sample_count
-    recall_at_5 = count_top_5 / total_sample_count
-    print('%s: precision @ 1 = %.4f recall @ 5 = %.4f [%d examples]' %
-          (datetime.now(), precision_at_1, recall_at_5, total_sample_count))
+    # compute test set accuracy
+    top_1_accuracy = count_top_1 / total_sample_count
+    top_5_accuracy = count_top_5 / total_sample_count
+    print('%s: top_1_acc=%.4f, top_5_acc=%.4f [%d examples]' %
+          (datetime.now(), top_1_accuracy, top_5_accuracy, total_sample_count))
 
     summary = tf.Summary()
     summary.ParseFromString(sess.run(summary_op))
-    summary.value.add(tag='test/Precision @ 1', simple_value=precision_at_1)
-    summary.value.add(tag='test/Recall @ 5', simple_value=recall_at_5)
+    summary.value.add(tag='test/top_1_accuracy', simple_value=top_1_accuracy)
+    summary.value.add(tag='test/top_5_accuracy', simple_value=top_5_accuracy)
     summary_writer.add_summary(summary, global_step)
 
   except Exception as e:  # pylint: disable=broad-except
