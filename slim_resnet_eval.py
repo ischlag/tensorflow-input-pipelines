@@ -13,8 +13,8 @@ from libs import custom_ops
 from nets import bn_conv
 from nets import highway_test
 
-log_dir = "logs/cifar10/1/"
-eval_dir = "logs/cifar10/1_eval/"
+log_dir = "logs/cifar10/3/"
+eval_dir = "logs/cifar10/3_eval/"
 batch_size = 64
 num_classes = 10
 epoch_size = 10000.0
