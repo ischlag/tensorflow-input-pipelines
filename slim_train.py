@@ -12,11 +12,12 @@ from libs import custom_ops
 from nets import bn_conv
 from nets import highway_test
 
-log_dir = "logs/cifar10/2/"
+log_dir = "logs/cifar10/3/"
 batch_size = 64
 num_classes = 10
 epoch_in_steps = int(50000.0/batch_size)
 max_step = epoch_in_steps * 15
+load_latest_checkpoint = True
 
 sess = tf.Session()
 
@@ -32,7 +33,7 @@ from tensorflow.contrib.slim.nets import resnet_v2
 with slim.arg_scope(custom_ops.resnet_arg_scope(is_training=True)):
   net, end_points = resnet_v2.resnet_v2_101(image_batch_tensor,
                                               num_classes=num_classes,
-                                               global_pool=True)# reduce output to rank 2 (not working)
+                                              global_pool=True)# reduce output to rank 2 (not working)
 logits = tf.reduce_mean(net, [1, 2], name='pool5', keep_dims=False)
 
 ## Losses and Accuracies
@@ -63,13 +64,22 @@ tf.scalar_summary('train/top_5_batch_acc', top_5_batch_accuracy)
 summary_op = tf.merge_all_summaries()
 
 ## Initialization
-saver = tf.train.Saver(max_to_keep=10000000)
+saver = tf.train.Saver(max_to_keep=10000000,)
 summary_writer = tf.train.SummaryWriter(log_dir)
 
 coord = tf.train.Coordinator()
 threads = tf.train.start_queue_runners(coord=coord, sess=sess)
 
 sess.run(tf.global_variables_initializer())
+
+if load_latest_checkpoint:
+  checkpoint = tf.train.latest_checkpoint("logs/cifar10/2/")
+  if checkpoint:
+      print("Restoring from checkpoint", checkpoint)
+      saver.restore(sess, checkpoint)
+  else:
+    print("Couldn't find checkpoint to restore from. Exiting.")
+    exit()
 
 ## Training
 epoch_count = 0
@@ -104,5 +114,4 @@ for step in range(max_step):
 
 
 print("done!")
-
-
+sess.close()
