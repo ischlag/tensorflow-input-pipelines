@@ -13,11 +13,11 @@ from libs import custom_ops
 from nets import bn_conv
 from nets import highway_test
 
-log_dir = "logs/cifar10/2/"
-eval_dir = "logs/cifar10/2_eval/"
+log_dir = "logs/cifar10/1/"
+eval_dir = "logs/cifar10/1_eval/"
 batch_size = 64
 num_classes = 10
-epoch_in_steps = int(50000.0/batch_size)
+epoch_in_steps = int(10000.0/batch_size)
 max_step = epoch_in_steps * 15
 load_latest_checkpoint = True
 eval_interval_secs = 10
@@ -31,14 +31,13 @@ with tf.device('/cpu:0'):
   image_batch_tensor, target_batch_tensor = d.build_test_data_tensor(shuffle=False)
 
 ## Model
-#logits = bn_conv.inference(image_batch_tensor, num_classes=num_classes, is_training=True)
-#logits = highway_test.inference(image_batch_tensor, num_classes=num_classes, is_training=True)
-from tensorflow.contrib.slim.nets import resnet_v2
-with slim.arg_scope(custom_ops.resnet_arg_scope(is_training=True)):
-  net, end_points = resnet_v2.resnet_v2_101(image_batch_tensor,
-                                              num_classes=num_classes,
-                                              global_pool=True)# reduce output to rank 2 (not working)
-logits = tf.reduce_mean(net, [1, 2], name='pool5', keep_dims=False)
+logits = bn_conv.inference(image_batch_tensor, num_classes=num_classes, is_training=True)
+#from tensorflow.contrib.slim.nets import resnet_v2
+#with slim.arg_scope(custom_ops.resnet_arg_scope(is_training=True)):
+#  net, end_points = resnet_v2.resnet_v2_101(image_batch_tensor,
+#                                              num_classes=num_classes,
+#                                              global_pool=True)# reduce output to rank 2 (not working)
+#logits = tf.reduce_mean(net, [1, 2], name='pool5', keep_dims=False)
 
 ## Losses and Accuracies
 cross_entropy = tf.nn.softmax_cross_entropy_with_logits(logits,
