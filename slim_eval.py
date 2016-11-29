@@ -50,13 +50,6 @@ top_5_correct = tf.nn.in_top_k(logits, tf.argmax(target_batch_tensor, 1), 5)
 top_1_batch_accuracy = tf.reduce_sum(tf.cast(top_1_correct, tf.float32)) * 100.0 / batch_size
 top_5_batch_accuracy = tf.reduce_sum(tf.cast(top_5_correct, tf.float32)) * 100.0 / batch_size
 
-
-## Summaries
-tf.scalar_summary('test/loss', loss)
-tf.scalar_summary('test/top_1_batch_acc', top_1_batch_accuracy)
-tf.scalar_summary('test/top_5_batch_acc', top_5_batch_accuracy)
-summary_op = tf.merge_all_summaries()
-
 ## Initialization
 saver = tf.train.Saver(max_to_keep=10000000,)
 summary_writer = tf.train.SummaryWriter(eval_dir)
@@ -77,6 +70,7 @@ def _eval_model_checkpoint(model_checkpoint_path):
   # Counts the number of correct predictions.
   count_top_1 = 0.0
   count_top_5 = 0.0
+  count_avg_loss = 0.0
   total_sample_count = num_iter * batch_size
   step = 0
   global_step = model_checkpoint_path.split('/')[-1].split('-')[-1]
@@ -84,9 +78,10 @@ def _eval_model_checkpoint(model_checkpoint_path):
   print('%s: starting evaluation.' % (datetime.now()))
   start_time = time.time()
   while step < num_iter and not coord.should_stop():
-    top_1_val, top_5_val, summary_value = sess.run([top_1_correct, top_5_correct, summary_op])
+    top_1_val, top_5_val, loss_value = sess.run([top_1_correct, top_5_correct, loss])
     count_top_1 += np.sum(top_1_val)
     count_top_5 += np.sum(top_5_val)
+    count_avg_loss += np.mean(loss_value)
     step += 1
     if step % 40 == 0:
       duration = time.time() - start_time
@@ -95,19 +90,21 @@ def _eval_model_checkpoint(model_checkpoint_path):
       print('%s: [%d batches out of %d] (%.1f examples/sec; %.3f'
             'sec/batch)' % (datetime.now(), step, num_iter,
                             examples_per_sec, sec_per_batch))
-      summary_writer.add_summary(summary_value, global_step)
       start_time = time.time()
 
   # compute test set accuracy
   top_1_accuracy = count_top_1 / total_sample_count
   top_5_accuracy = count_top_5 / total_sample_count
-  print('%s: top_1_acc=%.4f, top_5_acc=%.4f [%d examples]' %
-        (datetime.now(), top_1_accuracy, top_5_accuracy, total_sample_count))
+  avg_loss = count_avg_loss / total_sample_count
+  print('%s: top_1_acc=%.4f, top_5_acc=%.4f avg_loss=%.7f [%d examples]' %
+        (datetime.now(), top_1_accuracy, top_5_accuracy, count_avg_loss, total_sample_count))
 
   top_1_summary = tf.Summary(value=[tf.Summary.Value(tag="test/top_1_accuracy", simple_value=top_1_accuracy)])
   top_5_summary = tf.Summary(value=[tf.Summary.Value(tag="test/top_5_accuracy", simple_value=top_5_accuracy)])
+  avg_loss_summary = tf.Summary(value=[tf.Summary.Value(tag="test/avg_loss", simple_value=avg_loss)])
   summary_writer.add_summary(top_1_summary, global_step)
   summary_writer.add_summary(top_5_summary, global_step)
+  summary_writer.add_summary(avg_loss_summary, global_step)
 
 # Eval
 if run_once:
