@@ -49,9 +49,7 @@ top_1_batch_accuracy = tf.reduce_sum(tf.cast(top_1_correct, tf.float32)) * 100.0
 top_5_batch_accuracy = tf.reduce_sum(tf.cast(top_5_correct, tf.float32)) * 100.0 / batch_size
 
 ## Optimizer
-global_step = tf.get_variable('global_step', [],
-                  initializer = tf.constant_initializer(0),
-                  trainable = False)
+global_step = tf.Variable(0, name='global_step', trainable=False)
 learning_rate = tf.placeholder(tf.float32, name="learning_rate")
 optimizer = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9)
 train_op = optimizer.minimize(loss, global_step=global_step)
@@ -109,7 +107,7 @@ for step in range(max_step):
   if step % 390 == 0 or step == max_step-1:
     print("saving model checkpoint")
     checkpoint_path = os.path.join(log_dir, 'model.ckpt')
-    saver.save(sess, checkpoint_path, global_step=step)
+    saver.save(sess, checkpoint_path, global_step=global_step)
 
 
 

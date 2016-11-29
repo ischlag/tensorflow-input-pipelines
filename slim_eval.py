@@ -19,7 +19,6 @@ batch_size = 64
 num_classes = 10
 epoch_in_steps = int(10000.0/batch_size)
 max_step = epoch_in_steps * 15
-load_latest_checkpoint = True
 eval_interval_secs = 10
 run_once = False
 
