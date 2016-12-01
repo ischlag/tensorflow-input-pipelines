@@ -121,12 +121,12 @@ class ResNet(object):
       self.cost = tf.reduce_mean(xent, name='xent')
       self.cost += self._decay()
 
-      tf.scalar_summary('cost', self.cost)
+      #tf.scalar_summary('cost', self.cost)
 
   def _build_train_op(self):
     """Build training specific ops for the graph."""
     self.lrn_rate = tf.constant(self.hps.lrn_rate, tf.float32)
-    tf.scalar_summary('learning rate', self.lrn_rate)
+    #tf.scalar_summary('learning rate', self.lrn_rate)
 
     trainable_variables = tf.trainable_variables()
     grads = tf.gradients(self.cost, trainable_variables)

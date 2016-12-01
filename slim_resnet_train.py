@@ -3,21 +3,23 @@ import tensorflow.contrib.slim as slim
 import numpy as np
 import os
 import time
-from datetime import datetime
 
 from datasets.cifar10 import cifar10_data
 from datasets.cifar100 import cifar100_data
 
 from libs import custom_ops
 from nets import bn_conv
-from nets import highway_test
 
-log_dir = "logs/cifar10/3/"
-batch_size = 64
+tf.logging.set_verbosity(tf.logging.INFO)
+
+log_dir = "logs/cifar10/1l_long/"
+batch_size = 128
 num_classes = 10
 epoch_in_steps = int(50000.0/batch_size)
 max_step = epoch_in_steps * 15
 load_latest_checkpoint = False
+step = 0
+lrn_rate = 0.1
 
 sess = tf.Session()
 
@@ -40,8 +42,8 @@ import nets.resnet
 hps = nets.resnet.HParams(batch_size=batch_size,
                              num_classes=num_classes,
                              min_lrn_rate=0.0001,
-                             lrn_rate=0.1,
-                             num_residual_units=5,
+                             lrn_rate=0.01,
+                             num_residual_units=1,
                              use_bottleneck=False,
                              weight_decay_rate=0.0002,
                              relu_leakiness=0.1,
@@ -50,26 +52,16 @@ model = nets.resnet.ResNet(hps, image_batch_tensor, target_batch_tensor, 'train'
 model.build_graph()
 
 ## Losses and Accuracies
-cross_entropy = tf.nn.softmax_cross_entropy_with_logits(model.logits,
-                                                        tf.cast(target_batch_tensor, tf.float32),
-                                                        name="cross-entropy")
-loss = tf.reduce_mean(cross_entropy, name='loss')
-
 top_1_correct = tf.nn.in_top_k(model.logits, tf.argmax(target_batch_tensor, 1), 1)
 top_5_correct = tf.nn.in_top_k(model.logits, tf.argmax(target_batch_tensor, 1), 5)
-
 top_1_batch_accuracy = tf.reduce_sum(tf.cast(top_1_correct, tf.float32)) * 100.0 / batch_size
 top_5_batch_accuracy = tf.reduce_sum(tf.cast(top_5_correct, tf.float32)) * 100.0 / batch_size
 
 ## Optimizer
-global_step = tf.Variable(0, name='global_step', trainable=False)
-learning_rate = tf.placeholder(tf.float32, name="learning_rate")
-optimizer = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9)
-train_op = optimizer.minimize(loss, global_step=global_step)
 
 ## Summaries
-tf.scalar_summary('train/loss', loss)
-tf.scalar_summary('train/learning_rate', learning_rate)
+tf.scalar_summary('train/loss', model.cost)
+tf.scalar_summary('train/learning_rate', model.lrn_rate)
 tf.scalar_summary('train/top_1_batch_acc', top_1_batch_accuracy)
 tf.scalar_summary('train/top_5_batch_acc', top_5_batch_accuracy)
 summary_op = tf.merge_all_summaries()
@@ -77,49 +69,57 @@ summary_op = tf.merge_all_summaries()
 ## Initialization
 saver = tf.train.Saver(max_to_keep=10000000,)
 summary_writer = tf.train.SummaryWriter(log_dir)
-
 coord = tf.train.Coordinator()
 threads = tf.train.start_queue_runners(coord=coord, sess=sess)
-
 sess.run(tf.global_variables_initializer())
 
+## Load Pretrained
 if load_latest_checkpoint:
   checkpoint = tf.train.latest_checkpoint(log_dir)
   if checkpoint:
-      print("Restoring from checkpoint", checkpoint)
-      saver.restore(sess, checkpoint)
+    tf.logging.info("Restoring from checkpoint %s" % checkpoint)
+    saver.restore(sess, checkpoint)
+    step = sess.run(model.global_step)
   else:
-    print("Couldn't find checkpoint to restore from. Exiting.")
+    tf.logging.error("Couldn't find checkpoint to restore from. Exiting.")
     exit()
 
-## Training
-epoch_count = 0
-lr = 0.01
-for step in range(max_step):
+## Train
+tf.logging.info('start training ...')
+while not coord.should_stop():
   start_time = time.time()
+  (_, summaries, loss, train_step, top_1_acc_val, top_5_acc_val) = sess.run(
+    [model.train_op, summary_op, model.cost, model.global_step, top_1_batch_accuracy, top_5_batch_accuracy],
+    feed_dict={model.lrn_rate: lrn_rate})
 
-  if step % (epoch_in_steps*10) == 0 and step > 100:
-    lr /= 10
-    print("learning rate decrased to ", lr)
+  if train_step < 20000: # 40000
+    lrn_rate = 0.1
+  elif train_step < 40000: # 60000
+    lrn_rate = 0.01
+  elif train_step < 60000: # 80000
+    lrn_rate = 0.001
+  else:
+    lrn_rate = 0.0001
 
-  if step % epoch_in_steps == 0:
-    epoch_count += 1
-    print("epoch: ", epoch_count)
-
-  _, summary_str, loss_val = sess.run([train_op, summary_op, loss], feed_dict={learning_rate: lr})
   duration = time.time() - start_time
 
-  assert not np.isnan(loss_val), 'Model diverged with loss = NaN'
-
+  step += 1
   if step % 50 == 0:
     examples_per_sec = batch_size / float(duration)
-    format_str = ('%s: step %d, loss = %.2f (%.1f examples/sec; %.3f sec/batch)')
-    print(format_str % (datetime.now(), step, loss_val, examples_per_sec, duration))
-    summary_writer.add_summary(summary_str, step)
+    format_str = ('%s: step %4.d, loss: %4.3f, top-1: %5.2f%%, top-5: %5.2f%% (%.1f examples/sec; %.3f sec/batch)')
+    tf.logging.info(format_str % (time.strftime("%X"), step, loss,
+                                  top_1_acc_val, top_5_acc_val, examples_per_sec, duration))
+    summary_writer.add_summary(summaries, step)
+    summary_writer.flush()
 
-  if step % 390 == 0 or step == max_step-1:
-    print("saving model checkpoint")
+  if step % 500 == 0:
+    tf.logging.info("saving checkpoint")
     checkpoint_path = os.path.join(log_dir, 'model.ckpt')
-    saver.save(sess, checkpoint_path, global_step=global_step)
+    saver.save(sess, checkpoint_path, global_step=model.global_step)
+
+  if step == 50000:
+    exit()
+
+coord.join(threads)
 
 print("done!")

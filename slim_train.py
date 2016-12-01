@@ -12,7 +12,7 @@ from libs import custom_ops
 from nets import bn_conv
 from nets import highway_test
 
-log_dir = "logs/cifar10/1/"
+log_dir = "logs/cifar10/8l_conv/"
 batch_size = 64
 num_classes = 10
 epoch_in_steps = int(50000.0/batch_size)
@@ -64,10 +64,8 @@ summary_op = tf.merge_all_summaries()
 ## Initialization
 saver = tf.train.Saver(max_to_keep=10000000,)
 summary_writer = tf.train.SummaryWriter(log_dir)
-
 coord = tf.train.Coordinator()
 threads = tf.train.start_queue_runners(coord=coord, sess=sess)
-
 sess.run(tf.global_variables_initializer())
 
 if load_latest_checkpoint:

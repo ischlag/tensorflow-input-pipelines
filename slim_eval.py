@@ -13,8 +13,8 @@ from libs import custom_ops
 from nets import bn_conv
 from nets import highway_test
 
-log_dir = "logs/cifar10/1/"
-eval_dir = "logs/cifar10/1_eval/"
+log_dir = "logs/cifar10/8l_conv/"
+eval_dir = "logs/cifar10/8l_conv/"
 batch_size = 64
 num_classes = 10
 epoch_size = 10000.0
@@ -47,16 +47,11 @@ loss = tf.reduce_mean(cross_entropy, name='loss')
 top_1_correct = tf.nn.in_top_k(logits, tf.argmax(target_batch_tensor, 1), 1)
 top_5_correct = tf.nn.in_top_k(logits, tf.argmax(target_batch_tensor, 1), 5)
 
-top_1_batch_accuracy = tf.reduce_sum(tf.cast(top_1_correct, tf.float32)) * 100.0 / batch_size
-top_5_batch_accuracy = tf.reduce_sum(tf.cast(top_5_correct, tf.float32)) * 100.0 / batch_size
-
 ## Initialization
-saver = tf.train.Saver(max_to_keep=10000000,)
+saver = tf.train.Saver(max_to_keep=10000000)
 summary_writer = tf.train.SummaryWriter(eval_dir)
-
 coord = tf.train.Coordinator()
 threads = tf.train.start_queue_runners(coord=coord, sess=sess)
-
 sess.run(tf.global_variables_initializer())
 
 def _eval_model_checkpoint(model_checkpoint_path):
@@ -105,6 +100,7 @@ def _eval_model_checkpoint(model_checkpoint_path):
   summary_writer.add_summary(top_1_summary, global_step)
   summary_writer.add_summary(top_5_summary, global_step)
   summary_writer.add_summary(avg_loss_summary, global_step)
+  summary_writer.flush()
 
 # Eval
 if run_once:
