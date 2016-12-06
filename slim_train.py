@@ -10,7 +10,6 @@ from datasets.cifar100 import cifar100_data
 
 from libs import custom_ops
 from nets import bn_conv
-from nets import highway_test
 
 log_dir = "logs/cifar10/8l_conv/"
 batch_size = 64

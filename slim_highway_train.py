@@ -14,7 +14,7 @@ from nets import bn_conv
 
 tf.logging.set_verbosity(tf.logging.INFO)
 
-log_dir = "logs/cifar10/6stages_2res_0final_RandNorm_sgd/"
+log_dir = "logs/cifar10/3stages_20hw_0final_RandNorm_sgd/"
 batch_size = 128
 num_classes = 10
 epoch_in_steps = int(50000.0/batch_size)
@@ -41,17 +41,17 @@ with tf.device('/cpu:0'):
 #logits = tf.reduce_mean(net, [1, 2], name='pool5', keep_dims=False)
 
 #import nets.resnet
-import nets.resnet_uniform
-hps = nets.resnet_uniform.HParams(batch_size=batch_size,
+import nets.highway_uniform
+hps = nets.highway_uniform.HParams(batch_size=batch_size,
                           num_classes=num_classes,
                           min_lrn_rate=0.0001,
                           lrn_rate=0.1,
-                          num_residual_units=2,
+                          num_residual_units=20,
                           use_bottleneck=False,
                           weight_decay_rate=0.0002,
                           relu_leakiness=0.1,
                           optimizer='mom')
-model = nets.resnet_uniform.ResNet(hps, image_batch_tensor, target_batch_tensor, 'train')
+model = nets.highway_uniform.ResNet(hps, image_batch_tensor, target_batch_tensor, 'train')
 model.build_graph()
 
 ## Losses and Accuracies

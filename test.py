@@ -92,15 +92,51 @@ mean, var = get_mean_and_variance(pts)
 print("Mean: ", mean," Var: ", var)
 all_pts.append(orig_pts)
 
+pts = transform(pts, partial(rand, 0.01), residual=True)
+mean, var = get_mean_and_variance(pts)
+print("Mean: ", mean, " Var: ", var)
+pts = transform(pts, partial(batch_norm, mean, var), residual=False)
+# pts = activation(pts)
+all_pts.append(pts)
+
+pts = transform(pts, partial(rand, 0.01), residual=True)
+mean, var = get_mean_and_variance(pts)
+print("Mean: ", mean, " Var: ", var)
+pts = transform(pts, partial(batch_norm, mean, var), residual=False)
+# pts = activation(pts)
+all_pts.append(pts)
+
+pts = transform(pts, partial(rand, 0.01), residual=False)
+mean, var = get_mean_and_variance(pts)
+print("Mean: ", mean, " Var: ", var)
+pts = transform(pts, partial(batch_norm, mean, var), residual=False)
+# pts = activation(pts)
+all_pts.append(pts)
+
+pts = transform(pts, partial(rand, 0.01), residual=True)
+mean, var = get_mean_and_variance(pts)
+print("Mean: ", mean, " Var: ", var)
+pts = transform(pts, partial(batch_norm, mean, var), residual=False)
+# pts = activation(pts)
+all_pts.append(pts)
+
+pts = transform(pts, partial(rand, 0.01), residual=True)
+mean, var = get_mean_and_variance(pts)
+print("Mean: ", mean, " Var: ", var)
+pts = transform(pts, partial(batch_norm, mean, var), residual=False)
+# pts = activation(pts)
+all_pts.append(pts)
+
+"""
 for i in range(5):
   # top right
-  pts = transform(pts, partial(rot, 20), residual=True)
+  pts = transform(pts, partial(rand, 0.01), residual=False)
   mean, var = get_mean_and_variance(pts)
   print("Mean: ", mean," Var: ", var)
   pts = transform(pts, partial(batch_norm, mean, var), residual=False)
-  pts = activation(pts)
+  #pts = activation(pts)
   all_pts.append(pts)
-
+"""
 
 
 """

@@ -6,6 +6,7 @@
 #
 
 import tensorflow as tf
+import numpy as np
 
 def dense(data, 
           n_units,
@@ -103,3 +104,12 @@ def batch_norm(x, n_out, phase_train, scope='bn'):
 
   #print("BNORM OUT:", normed)
   return normed
+
+def push_into_queue(value, queue, tag, step, writer):
+  """Pushes new values into a queue of fixed length and writes the average of that queue into a summary operation."""
+  queue.pop()
+  queue.appendleft(value)
+  avg = np.mean(queue).item()
+  avg_summary = tf.Summary(value=[tf.Summary.Value(tag=tag, simple_value=avg)])
+  writer.add_summary(avg_summary, global_step=step)
+  return avg

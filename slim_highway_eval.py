@@ -12,15 +12,18 @@ from datasets.cifar100 import cifar100_data
 from libs import custom_ops
 from nets import bn_conv
 
-log_dir = "logs/cifar10/8l_conv/"
-eval_dir = "logs/cifar10/8l_conv/"
-batch_size = 64
+log_dir = "logs/cifar10/3stages_5hw_0final_RandNorm_sgd/"
+eval_dir = log_dir
+batch_size = 128
 num_classes = 10
 epoch_size = 10000.0
 num_iter = int(math.ceil(epoch_size/batch_size))
-eval_interval_secs = 10
+load_latest_checkpoint = False
+
+eval_interval_secs = 3
 run_once = False
 
+tf.logging.set_verbosity(tf.logging.INFO)
 sess = tf.Session()
 
 ## Data
@@ -29,22 +32,31 @@ with tf.device('/cpu:0'):
   image_batch_tensor, target_batch_tensor = d.build_test_data_tensor(shuffle=False)
 
 ## Model
-logits = bn_conv.inference(image_batch_tensor, num_classes=num_classes, is_training=True)
+#logits = bn_conv.inference(image_batch_tensor, num_classes=num_classes, is_training=True)
 #from tensorflow.contrib.slim.nets import resnet_v2
 #with slim.arg_scope(custom_ops.resnet_arg_scope(is_training=True)):
 #  net, end_points = resnet_v2.resnet_v2_101(image_batch_tensor,
 #                                              num_classes=num_classes,
 #                                              global_pool=True)# reduce output to rank 2 (not working)
 #logits = tf.reduce_mean(net, [1, 2], name='pool5', keep_dims=False)
+import nets.highway_uniform
+hps = nets.highway_uniform.HParams(batch_size=batch_size,
+                          num_classes=num_classes,
+                          min_lrn_rate=None,
+                          lrn_rate=None,
+                          num_residual_units=20,
+                          use_bottleneck=False,
+                          weight_decay_rate=0.0002,
+                          relu_leakiness=0.1,
+                          optimizer='mom')
+model = nets.highway_uniform.ResNet(hps, image_batch_tensor, target_batch_tensor, 'eval')
+model.build_graph()
 
 ## Losses and Accuracies
-cross_entropy = tf.nn.softmax_cross_entropy_with_logits(logits,
-                                                        tf.cast(target_batch_tensor, tf.float32),
-                                                        name="cross-entropy")
-loss = tf.reduce_mean(cross_entropy, name='loss')
 
-top_1_correct = tf.nn.in_top_k(logits, tf.argmax(target_batch_tensor, 1), 1)
-top_5_correct = tf.nn.in_top_k(logits, tf.argmax(target_batch_tensor, 1), 5)
+## Optimizer
+
+## Summaries
 
 ## Initialization
 saver = tf.train.Saver(max_to_keep=10000000)
@@ -53,67 +65,68 @@ coord = tf.train.Coordinator()
 threads = tf.train.start_queue_runners(coord=coord, sess=sess)
 sess.run(tf.global_variables_initializer())
 
+
 def _eval_model_checkpoint(model_checkpoint_path):
   if model_checkpoint_path:
-      print("Restoring from checkpoint", model_checkpoint_path)
-      saver.restore(sess, model_checkpoint_path)
+    tf.logging.info("Restoring from checkpoint %s" % model_checkpoint_path)
+    saver.restore(sess, model_checkpoint_path)
   else:
-    print("Couldn't find checkpoint to restore from. Exiting.")
+    tf.logging.error("Couldn't find checkpoint to restore from. Exiting.")
     return
 
   # Counts the number of correct predictions.
-  count_top_1 = 0.0
-  count_top_5 = 0.0
-  count_avg_loss = 0.0
+  total_loss = 0.0
   total_sample_count = num_iter * batch_size
   step = 0
   global_step = model_checkpoint_path.split('/')[-1].split('-')[-1]
 
-  print('%s: starting evaluation.' % (datetime.now()))
+  tf.logging.info('%s: starting evaluation.' % (datetime.now()))
   start_time = time.time()
+  correct_prediction, total_prediction = 0, 0
   while step < num_iter and not coord.should_stop():
-    top_1_val, top_5_val, loss_value = sess.run([top_1_correct, top_5_correct, loss])
-    count_top_1 += np.sum(top_1_val)
-    count_top_5 += np.sum(top_5_val)
-    count_avg_loss += np.mean(loss_value)
+    loss_value, predictions, truth = sess.run([model.cost, model.predictions, model.labels])
+
+    total_loss += np.sum(loss_value)
+    truth = np.argmax(truth, axis=1)
+    predictions = np.argmax(predictions, axis=1)
+    correct_prediction += np.sum(truth == predictions)
+    total_prediction += predictions.shape[0]
+
     step += 1
-    if step % 40 == 0:
+    if step % 200 == 0:
       duration = time.time() - start_time
       sec_per_batch = duration / 20.0
       examples_per_sec = batch_size / sec_per_batch
-      print('%s: [%d batches out of %d] (%.1f examples/sec; %.3f'
-            'sec/batch)' % (datetime.now(), step, num_iter,
-                            examples_per_sec, sec_per_batch))
+      tf.logging.info('[%d batches out of %d] (%.1f examples/sec; %.3f'
+            'sec/batch)' % (step, num_iter, examples_per_sec, sec_per_batch))
       start_time = time.time()
 
   # compute test set accuracy
-  top_1_accuracy = count_top_1 / total_sample_count
-  top_5_accuracy = count_top_5 / total_sample_count
-  avg_loss = count_avg_loss / total_sample_count
-  print('%s: top_1_acc=%.4f, top_5_acc=%.4f avg_loss=%.7f [%d examples]' %
-        (datetime.now(), top_1_accuracy, top_5_accuracy, count_avg_loss, total_sample_count))
+  accuracy = correct_prediction * 100.0 / total_prediction
+  avg_loss = total_loss / total_sample_count
 
-  top_1_summary = tf.Summary(value=[tf.Summary.Value(tag="test/top_1_accuracy", simple_value=top_1_accuracy)])
-  top_5_summary = tf.Summary(value=[tf.Summary.Value(tag="test/top_5_accuracy", simple_value=top_5_accuracy)])
+  tf.logging.info('%s: top_1_acc: %6.3f%%, avg_loss: %.7f [%d examples]' %
+        (global_step, accuracy, avg_loss, total_sample_count))
+
+  accuracy_sum = tf.Summary(value=[tf.Summary.Value(tag="test/accuracy", simple_value=accuracy)])
   avg_loss_summary = tf.Summary(value=[tf.Summary.Value(tag="test/avg_loss", simple_value=avg_loss)])
-  summary_writer.add_summary(top_1_summary, global_step)
-  summary_writer.add_summary(top_5_summary, global_step)
+  summary_writer.add_summary(accuracy_sum, global_step)
   summary_writer.add_summary(avg_loss_summary, global_step)
   summary_writer.flush()
 
-# Eval
+## Eval
 if run_once:
   ckpt = tf.train.get_checkpoint_state(log_dir)
   if ckpt and ckpt.model_checkpoint_path:
     _eval_model_checkpoint(ckpt.model_checkpoint_path)
   else:
-    print('No checkpoint file found')
+    tf.logging.error('No checkpoint file found')
     exit()
 
 else:
   done = []
   while True:
-    print("checking for new models ...")
+    tf.logging.info("checking for new models in %s ... " % log_dir)
     ckpt = tf.train.get_checkpoint_state(log_dir)
     if ckpt and ckpt.model_checkpoint_path:
       for path in ckpt.all_model_checkpoint_paths:
@@ -121,8 +134,7 @@ else:
           done.append(path)
           _eval_model_checkpoint(path)
     else:
-      print('No checkpoint file found')
+      tf.logging.error('No checkpoint file found')
     time.sleep(eval_interval_secs)
-
 
 print("done!")
