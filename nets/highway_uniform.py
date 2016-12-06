@@ -75,15 +75,15 @@ class ResNet(object):
 
     with tf.variable_scope('stage4'):
       tf.logging.info("Stage 4")
-      x = self.stage(x, self.hps.num_residual_units, 64)
+      x = self.stage(x, self.hps.num_residual_units, 128)
 
     with tf.variable_scope('stage5'):
       tf.logging.info("Stage 5")
-      x = self.stage(x, self.hps.num_residual_units, 64)
+      x = self.stage(x, self.hps.num_residual_units, 128)
 
     with tf.variable_scope('stage6'):
       tf.logging.info("Stage 6")
-      x = self.stage(x, self.hps.num_residual_units, 64)
+      x = self.stage(x, self.hps.num_residual_units, 128)
 
 
     with tf.variable_scope('stage7'):
@@ -127,7 +127,7 @@ class ResNet(object):
       x = self._classic(x, out_filter)
     for i in range(n_residuals):
       with tf.variable_scope('highway_' + str(i)):
-        x = self._highway(x, out_filter, bias_init=-1)
+        x = self._highway(x, out_filter, bias_init=-2)
     return x
 
   def _classic(self, x, out_filter, stride=1):

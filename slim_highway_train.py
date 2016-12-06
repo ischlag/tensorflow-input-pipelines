@@ -14,7 +14,7 @@ from nets import bn_conv
 
 tf.logging.set_verbosity(tf.logging.INFO)
 
-log_dir = "logs/cifar10/3stages_20hw_0final_RandNorm_sgd/"
+log_dir = "logs/cifar10/3stages_16hw_0final_RandNorm_sgd_b3_/"
 batch_size = 128
 num_classes = 10
 epoch_in_steps = int(50000.0/batch_size)
@@ -46,7 +46,7 @@ hps = nets.highway_uniform.HParams(batch_size=batch_size,
                           num_classes=num_classes,
                           min_lrn_rate=0.0001,
                           lrn_rate=0.1,
-                          num_residual_units=20,
+                          num_residual_units=16,
                           use_bottleneck=False,
                           weight_decay_rate=0.0002,
                           relu_leakiness=0.1,

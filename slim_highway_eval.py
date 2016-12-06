@@ -12,7 +12,7 @@ from datasets.cifar100 import cifar100_data
 from libs import custom_ops
 from nets import bn_conv
 
-log_dir = "logs/cifar10/3stages_5hw_0final_RandNorm_sgd/"
+log_dir = "logs/cifar10/6stages_5hw_0final_RandNorm_sgd_b2_/"
 eval_dir = log_dir
 batch_size = 128
 num_classes = 10
