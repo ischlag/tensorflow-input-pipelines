@@ -111,13 +111,11 @@ class imagenet_data:
 
     # Data Augmentation
     if augmentation:
-      # TODO
-      # make sure after further preprocessing it is still [0 1]
-      pass
+      single_image = tf.image.resize_image_with_crop_or_pad(single_image, self.IMAGE_HEIGHT+4, self.IMAGE_WIDTH+4)
+      single_image = tf.random_crop(single_image, [self.IMAGE_HEIGHT, self.IMAGE_WIDTH, self.NUM_OF_CHANNELS])
+      single_image = tf.image.random_flip_left_right(single_image)
 
-    # convert the given [0, 1] to [-1, 1]
-    single_image = tf.sub(single_image, 0.5)
-    single_image = tf.mul(single_image, 2.0)
+      single_image = tf.image.per_image_standardization(single_image)
 
     if shuffle:
       images_batch, target_batch = tf.train.shuffle_batch([single_image, single_target],

@@ -51,38 +51,42 @@ class ResNet(object):
 
     with tf.variable_scope('init'):
       x = self._conv('init_conv', x, 16, stride=1)
+      x = self._batch_norm(x)
+      x = self._relu(x, self.hps.relu_leakiness)
+      x = self._conv('conv1', x, 16, stride=1)
+
       tf.logging.info('Initial Output: %s', x.get_shape())
 
     with tf.variable_scope('stage1'):
       tf.logging.info("Stage 1")
       x = self.stage(x, self.hps.num_residual_units, 16)
 
-    x = self._max_pool(x)
+    #x = self._max_pool(x)
 
     with tf.variable_scope('stage2'):
       tf.logging.info("Stage 2")
       x = self.stage(x, self.hps.num_residual_units, 32)
 
-    x = self._max_pool(x)
+    #x = self._max_pool(x)
 
     with tf.variable_scope('stage3'):
       tf.logging.info("Stage 3")
       x = self.stage(x, self.hps.num_residual_units, 64)
 
     # snip
-    x = self._max_pool(x)
-
+    #x = self._max_pool(x)
+    """
     with tf.variable_scope('stage4'):
       tf.logging.info("Stage 4")
-      x = self.stage(x, self.hps.num_residual_units, 128)
-    """
+      x = self.stage(x, self.hps.num_residual_units, 64)
+
     with tf.variable_scope('stage5'):
       tf.logging.info("Stage 5")
-      x = self.stage(x, self.hps.num_residual_units, 128)
+      x = self.stage(x, self.hps.num_residual_units, 64)
 
     with tf.variable_scope('stage6'):
       tf.logging.info("Stage 6")
-      x = self.stage(x, self.hps.num_residual_units, 128)
+      x = self.stage(x, self.hps.num_residual_units, 64)
 
 
     with tf.variable_scope('stage7'):
@@ -102,10 +106,13 @@ class ResNet(object):
       x = self.stage(x, self.hps.num_residual_units, 64)
     """
 
-    #with tf.variable_scope('final'):
-    #  x = self._batch_norm(x)
-    #  x = self._relu(x, self.hps.relu_leakiness)
-    #  x = self._max_pool(x)
+    with tf.variable_scope('final'):
+      x = self._batch_norm(x)
+      x = self._relu(x, self.hps.relu_leakiness)
+      #x = self._max_pool(x)
+      # avg pool
+      assert x.get_shape().ndims == 4
+      x = tf.reduce_mean(x, [1, 2])
 
     with tf.variable_scope('logit'):
       x = slim.layers.flatten(x)

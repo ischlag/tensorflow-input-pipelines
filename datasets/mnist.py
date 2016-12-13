@@ -86,13 +86,11 @@ class mnist_data:
 
     # Data Augmentation
     if augmentation:
-      # TODO
-      # make sure after further preprocessing it is [0 1]
-      pass
+      image = tf.image.resize_image_with_crop_or_pad(image, self.IMAGE_HEIGHT+4, self.IMAGE_WIDTH+4)
+      image = tf.random_crop(image, [self.IMAGE_HEIGHT, self.IMAGE_WIDTH, self.NUM_OF_CHANNELS])
+      image = tf.image.random_flip_left_right(image)
 
-    # convert the given [0, 1] to [-1, 1]
-    image = tf.sub(image, 0.5)
-    image = tf.mul(image, 2.0)
+    image = tf.image.per_image_standardization(image)
 
     images_batch, labels_batch = tf.train.batch([image, label], batch_size=self.batch_size, num_threads=self.NUM_THREADS)
 

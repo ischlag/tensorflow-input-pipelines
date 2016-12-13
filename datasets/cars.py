@@ -97,13 +97,11 @@ class cars_data:
 
     # Data Augmentation
     if augmentation:
-      # TODO
-      # make sure after further preprocessing it is [0 1]
-      pass
+      single_image = tf.image.resize_image_with_crop_or_pad(single_image, self.IMAGE_HEIGHT+4, self.IMAGE_WIDTH+4)
+      single_image = tf.random_crop(single_image, [self.IMAGE_HEIGHT, self.IMAGE_WIDTH, self.NUM_OF_CHANNELS])
+      single_image = tf.image.random_flip_left_right(single_image)
 
-    # convert the given [0, 1] to [-1, 1]
-    single_image = tf.sub(single_image, 0.5)
-    single_image = tf.mul(single_image, 2.0)
+    single_image = tf.image.per_image_standardization(single_image)
 
     # memory calculation:
     # 1 image uses 75*100*3*4 bytes = ~90kb
