@@ -51,19 +51,23 @@ class ResNet(object):
 
     with tf.variable_scope('init'):
       x = self._conv('init_conv', x, 16, stride=1)
+      x = self._batch_norm(x)
+      x = self._relu(x, self.hps.relu_leakiness)
+      x = self._conv('conv1', x, 16, stride=1)
+
       tf.logging.info('Initial Output: %s', x.get_shape())
 
     with tf.variable_scope('stage1'):
       tf.logging.info("Stage 1")
       x = self.stage(x, self.hps.num_residual_units, 16)
 
-    x = self._max_pool(x)
+    #x = self._max_pool(x)
 
     with tf.variable_scope('stage2'):
       tf.logging.info("Stage 2")
       x = self.stage(x, self.hps.num_residual_units, 32)
 
-    x = self._max_pool(x)
+    #x = self._max_pool(x)
 
     with tf.variable_scope('stage3'):
       tf.logging.info("Stage 3")
@@ -71,7 +75,7 @@ class ResNet(object):
 
     # snip
     #x = self._max_pool(x)
-
+    """
     with tf.variable_scope('stage4'):
       tf.logging.info("Stage 4")
       x = self.stage(x, self.hps.num_residual_units, 64)
@@ -84,7 +88,7 @@ class ResNet(object):
       tf.logging.info("Stage 6")
       x = self.stage(x, self.hps.num_residual_units, 64)
 
-    """
+
     with tf.variable_scope('stage7'):
       tf.logging.info("Stage 7")
       x = self.stage(x, self.hps.num_residual_units, 64)
@@ -102,10 +106,13 @@ class ResNet(object):
       x = self.stage(x, self.hps.num_residual_units, 64)
     """
 
-    #with tf.variable_scope('final'):
-    #  x = self._batch_norm(x)
-    #  x = self._relu(x, self.hps.relu_leakiness)
-    #  x = self._max_pool(x)
+    with tf.variable_scope('final'):
+      x = self._batch_norm(x)
+      x = self._relu(x, self.hps.relu_leakiness)
+      #x = self._max_pool(x)
+      # avg pool
+      assert x.get_shape().ndims == 4
+      x = tf.reduce_mean(x, [1, 2])
 
     with tf.variable_scope('logit'):
       x = slim.layers.flatten(x)
@@ -151,13 +158,13 @@ class ResNet(object):
       x = self._conv('conv2', x, out_filter, stride=stride)
 
     with tf.variable_scope('sub_add'):
-      #in_filter = orig_x.get_shape()[-1].value
-      #if in_filter != out_filter:
-      #  orig_x = tf.nn.avg_pool(orig_x, [1, stride, stride, 1], [1, stride, stride, 1], 'VALID')
-      #  orig_x = tf.pad(
-      #      orig_x, [[0, 0], [0, 0], [0, 0],
-      #               [(out_filter-in_filter)//2, (out_filter-in_filter)//2]])
-      #  tf.logging.info("avg pooling to fit dimensions. Add out: %s", x.get_shape())
+      in_filter = orig_x.get_shape()[-1].value
+      if in_filter != out_filter:
+        orig_x = tf.nn.avg_pool(orig_x, [1, stride, stride, 1], [1, stride, stride, 1], 'VALID')
+        orig_x = tf.pad(
+            orig_x, [[0, 0], [0, 0], [0, 0],
+                     [(out_filter-in_filter)//2, (out_filter-in_filter)//2]])
+        tf.logging.info("avg pooling to fit dimensions. Add out: %s", x.get_shape())
       x += orig_x
 
     tf.logging.info('Residual Block Output: %s', x.get_shape())

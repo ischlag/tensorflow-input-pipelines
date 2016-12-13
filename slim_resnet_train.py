@@ -14,13 +14,13 @@ from nets import bn_conv
 
 tf.logging.set_verbosity(tf.logging.INFO)
 
-log_dir = "logs/cifar10/wrn_paper_version/"
+log_dir = "logs/cifar10/wrn_uniform/"
 ckpt_dir = log_dir # "logs/cifar10/wrn_1/"
 batch_size = 64
 num_classes = 10
 epoch_in_steps = int(50000.0/batch_size)
 max_step = epoch_in_steps * 15
-load_latest_checkpoint = True
+load_latest_checkpoint = False
 step = 0
 lrn_rate = 0.1
 
@@ -42,8 +42,8 @@ with tf.device('/cpu:0'):
 #logits = tf.reduce_mean(net, [1, 2], name='pool5', keep_dims=False)
 
 #import nets.resnet
-import nets.resnet_old_reference
-hps = nets.resnet_old_reference.HParams(batch_size=batch_size,
+import nets.resnet_uniform
+hps = nets.resnet_uniform.HParams(batch_size=batch_size,
                           num_classes=num_classes,
                           min_lrn_rate=0.0001,
                           lrn_rate=0.1,
@@ -52,7 +52,7 @@ hps = nets.resnet_old_reference.HParams(batch_size=batch_size,
                           weight_decay_rate=0.0002,
                           relu_leakiness=0.1,
                           optimizer='mom')
-model = nets.resnet_old_reference.ResNet(hps, image_batch_tensor, target_batch_tensor, 'train')
+model = nets.resnet_uniform.ResNet(hps, image_batch_tensor, target_batch_tensor, 'train')
 model.build_graph()
 
 ## Losses and Accuracies
