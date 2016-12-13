@@ -14,12 +14,13 @@ from nets import bn_conv
 
 tf.logging.set_verbosity(tf.logging.INFO)
 
-log_dir = "logs/cifar10/6stages_2res_0final_RandNorm_sgd/"
-batch_size = 128
+ckpt_dir = "logs/cifar10/wrn_1/"
+log_dir = "logs/cifar10/wrn_2/"
+batch_size = 64
 num_classes = 10
 epoch_in_steps = int(50000.0/batch_size)
 max_step = epoch_in_steps * 15
-load_latest_checkpoint = False
+load_latest_checkpoint = True
 step = 0
 lrn_rate = 0.1
 
@@ -41,17 +42,17 @@ with tf.device('/cpu:0'):
 #logits = tf.reduce_mean(net, [1, 2], name='pool5', keep_dims=False)
 
 #import nets.resnet
-import nets.resnet_uniform
-hps = nets.resnet_uniform.HParams(batch_size=batch_size,
+import nets.resnet_old_reference
+hps = nets.resnet_old_reference.HParams(batch_size=batch_size,
                           num_classes=num_classes,
                           min_lrn_rate=0.0001,
                           lrn_rate=0.1,
-                          num_residual_units=2,
+                          num_residual_units=9,
                           use_bottleneck=False,
                           weight_decay_rate=0.0002,
                           relu_leakiness=0.1,
                           optimizer='mom')
-model = nets.resnet_uniform.ResNet(hps, image_batch_tensor, target_batch_tensor, 'train')
+model = nets.resnet_old_reference.ResNet(hps, image_batch_tensor, target_batch_tensor, 'train')
 model.build_graph()
 
 ## Losses and Accuracies
@@ -72,7 +73,7 @@ sess.run(tf.global_variables_initializer())
 
 ## Load Pretrained
 if load_latest_checkpoint:
-  checkpoint = tf.train.latest_checkpoint(log_dir)
+  checkpoint = tf.train.latest_checkpoint(ckpt_dir)
   if checkpoint:
     tf.logging.info("Restoring from checkpoint %s" % checkpoint)
     saver.restore(sess, checkpoint)
@@ -91,14 +92,14 @@ while not coord.should_stop():
     [model.train_op, summary_op, model.cost, model.global_step, model.predictions, model.labels],
     feed_dict={model.lrn_rate: lrn_rate})
 
-  if train_step < 15000: # 40000
+  if train_step < 40000: # 15000: # 40000
+    lrn_rate = 0.1
+  elif train_step < 60000: #30000: # 60000
     lrn_rate = 0.01
-  elif train_step < 30000: # 60000
+  elif train_step < 80000: # # 80000
     lrn_rate = 0.001
-  elif train_step < 40000: # 80000
-    lrn_rate = 0.0001
   else:
-    lrn_rate = 0.00001
+    lrn_rate = 0.0001
 
   duration = time.time() - start_time
   truth = np.argmax(truth, axis=1)
@@ -107,12 +108,12 @@ while not coord.should_stop():
   avg_accuracy = components.push_into_queue(accuracy, avg_top1_queue, "train/avg_accuracy", train_step, summary_writer)
   avg_loss = components.push_into_queue(loss, avg_loss_queue, "train/avg_loss", train_step, summary_writer)
 
-  if step % 50 == 0:
+  if step % 100 == 0:
     total_duration = (time.time() - total_start_time) / 60.0
     examples_per_sec = batch_size / float(duration)
     accuracy_sum = tf.Summary(value=[tf.Summary.Value(tag="train/accuracy", simple_value=accuracy)])
 
-    if step == 100:
+    if step == 500:
       format_str = ('%4.2fmin, step %4.d, lr: %.4f, loss: %4.3f, top-1: %5.2f%% (%.1f examples/sec; %.3f sec/batch)')
       tf.logging.info(format_str % (total_duration, step, lrn_rate, loss, accuracy, examples_per_sec, duration))
     else:
@@ -123,13 +124,10 @@ while not coord.should_stop():
     summary_writer.add_summary(summaries, train_step)
     summary_writer.flush()
 
-  if step % 500 == 0:
+  if step % 1000 == 0:
     tf.logging.info("saving checkpoint")
     checkpoint_path = os.path.join(log_dir, 'model.ckpt')
     saver.save(sess, checkpoint_path, global_step=model.global_step)
-
-  if step == 50000:
-    exit()
 
   step += 1
 

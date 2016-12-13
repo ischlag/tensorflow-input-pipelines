@@ -12,7 +12,7 @@ from datasets.cifar100 import cifar100_data
 from libs import custom_ops
 from nets import bn_conv
 
-log_dir = "logs/cifar10/6stages_2res_0final_RandNorm_sgd/"
+log_dir = "logs/cifar10/wrn_2/"
 eval_dir = log_dir
 batch_size = 128
 num_classes = 10
@@ -39,17 +39,17 @@ with tf.device('/cpu:0'):
 #                                              num_classes=num_classes,
 #                                              global_pool=True)# reduce output to rank 2 (not working)
 #logits = tf.reduce_mean(net, [1, 2], name='pool5', keep_dims=False)
-import nets.resnet_uniform
-hps = nets.resnet_uniform.HParams(batch_size=batch_size,
+import nets.resnet_old_reference
+hps = nets.resnet_old_reference.HParams(batch_size=batch_size,
                           num_classes=num_classes,
                           min_lrn_rate=None,
                           lrn_rate=None,
-                          num_residual_units=2,
+                          num_residual_units=9,
                           use_bottleneck=False,
                           weight_decay_rate=0.0002,
                           relu_leakiness=0.1,
                           optimizer='mom')
-model = nets.resnet_uniform.ResNet(hps, image_batch_tensor, target_batch_tensor, 'eval')
+model = nets.resnet_old_reference.ResNet(hps, image_batch_tensor, target_batch_tensor, 'eval')
 model.build_graph()
 
 ## Losses and Accuracies
