@@ -111,8 +111,7 @@ class ResNet(object):
       x = self._relu(x, self.hps.relu_leakiness)
       #x = self._max_pool(x)
       # avg pool
-      assert x.get_shape().ndims == 4
-      x = tf.reduce_mean(x, [1, 2])
+      x = self._global_avg_pool(x)
 
     with tf.variable_scope('logit'):
       x = slim.layers.flatten(x)
@@ -129,8 +128,8 @@ class ResNet(object):
       tf.scalar_summary(self.mode + '/cost', self.cost)
 
   def stage(self, x, n_residuals, out_filter):
-    with tf.variable_scope("classic"):
-      x = self._classic(x, out_filter)
+    #with tf.variable_scope("classic"):
+    #  x = self._classic(x, out_filter)
     for i in range(n_residuals):
       with tf.variable_scope('residual_' + str(i)):
         x = self._residual(x, out_filter)
