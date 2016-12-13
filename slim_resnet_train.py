@@ -14,8 +14,8 @@ from nets import bn_conv
 
 tf.logging.set_verbosity(tf.logging.INFO)
 
-ckpt_dir = "logs/cifar10/wrn_1/"
-log_dir = "logs/cifar10/wrn_2/"
+log_dir = "logs/cifar10/wrn_paper_version/"
+ckpt_dir = log_dir # "logs/cifar10/wrn_1/"
 batch_size = 64
 num_classes = 10
 epoch_in_steps = int(50000.0/batch_size)
