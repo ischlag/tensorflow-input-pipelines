@@ -28,7 +28,7 @@ sess = tf.Session()
 ## Data
 with tf.device('/cpu:0'):
   d = cifar10_data(batch_size=batch_size, sess=sess)
-  image_batch_tensor, target_batch_tensor = d.build_train_data_tensor(shuffle=True)
+  image_batch_tensor, target_batch_tensor = d.build_train_data_tensor(shuffle=True, augmentation=True)
 
 ## Model
 #logits = bn_conv.inference(image_batch_tensor, num_classes=num_classes, is_training=True)
