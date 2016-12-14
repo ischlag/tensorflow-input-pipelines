@@ -65,13 +65,13 @@ class ResNet(object):
 
     with tf.variable_scope('stage2'):
       tf.logging.info("Stage 2")
-      x = self.stage(x, self.hps.num_residual_units, 32)
+      x = self.stage(x, self.hps.num_residual_units, 32, first_layer_stride=2)
 
     #x = self._max_pool(x)
 
     with tf.variable_scope('stage3'):
       tf.logging.info("Stage 3")
-      x = self.stage(x, self.hps.num_residual_units, 64)
+      x = self.stage(x, self.hps.num_residual_units, 64, first_layer_stride=2)
 
     # snip
     #x = self._max_pool(x)
