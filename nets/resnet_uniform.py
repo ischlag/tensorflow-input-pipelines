@@ -180,7 +180,7 @@ class ResNet(object):
     with tf.variable_scope('sub2'):
       x = self._batch_norm(x)
       x = self._relu(x, self.hps.relu_leakiness)
-      x = self._conv('conv2', x, out_filter, stride=stride)
+      x = self._conv('conv2', x, out_filter, stride=1)
 
     with tf.variable_scope('sub_add'):
       in_filter = orig_x.get_shape()[-1].value

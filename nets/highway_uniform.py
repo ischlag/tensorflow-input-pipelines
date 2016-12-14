@@ -169,7 +169,7 @@ class ResNet(object):
     return x
 
   def _highway(self, x, out_filter, bias_init, stride=1):
-    """Residual unit with 2 sub layers."""
+    """Highway unit with 2 sub layers."""
     orig_x = x
 
     with tf.variable_scope('sub1'):
@@ -180,7 +180,7 @@ class ResNet(object):
     with tf.variable_scope('sub2'):
       x = self._batch_norm(x)
       x = self._relu(x, self.hps.relu_leakiness)
-      x = self._conv('conv2', x, out_filter, stride=stride)
+      x = self._conv('conv2', x, out_filter, stride=1)
 
     with tf.variable_scope('sub_add'):
       in_filter = orig_x.get_shape()[-1].value
@@ -192,15 +192,16 @@ class ResNet(object):
 
       filter_size = 3
       n = filter_size * filter_size * out_filter
-      T = slim.conv2d(x, out_filter, [3, 3], stride=stride,
+      T = slim.conv2d(x, out_filter, [3, 3], stride=1,
                       weights_initializer=tf.random_normal_initializer(stddev=np.sqrt(2.0/n)),
                       biases_initializer=tf.constant_initializer(bias_init),
                       activation_fn=tf.nn.sigmoid,
-                      scope='transform_gate')
+                      scope='transform_gate_1')
 
       # bias_init leads the network initially to be biased towards carry behaviour (i.e. T = 0)
       x = T * x  +  (1.0 - T) * orig_x
 
+    tf.logging.info('Highway Block Output: %s', x.get_shape())
     return x
 
   def _build_train_op(self):
