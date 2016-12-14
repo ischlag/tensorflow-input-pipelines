@@ -169,21 +169,38 @@ class ResNet(object):
     tf.logging.info('Residual Block Output: %s', x.get_shape())
     return x
 
+
   def _highway(self, x, out_filter, bias_init, stride=1):
-    x = self._batch_norm(x)
+    """Residual unit with 2 sub layers."""
+    orig_x = x
 
-    H = self._conv("activation", x, out_filter, stride=stride)
-    H = self._relu(H, self.hps.relu_leakiness)
+    with tf.variable_scope('sub1'):
+      x = self._batch_norm(x)
+      x = self._relu(x, self.hps.relu_leakiness)
+      x = self._conv('conv1', x, out_filter, stride=stride)
 
-    T = slim.conv2d(x, out_filter, [3, 3], stride=stride,
-                    weights_initializer=tf.random_normal_initializer(stddev=0.01),
-                    biases_initializer=tf.constant_initializer(bias_init),
-                    activation_fn=tf.nn.sigmoid,
-                    scope='transform_gate')
+    with tf.variable_scope('sub2'):
+      x = self._batch_norm(x)
+      x = self._relu(x, self.hps.relu_leakiness)
+      x = self._conv('conv2', x, out_filter, stride=stride)
 
-    # bias_init leads the network initially to be biased towards carry behaviour (i.e. T = 0)
-    x = T*H + (1.0 - T)*x
-    tf.logging.info('Highway Output: %s', x.get_shape())
+    with tf.variable_scope('sub_add'):
+      in_filter = orig_x.get_shape()[-1].value
+      if in_filter != out_filter:
+        orig_x = tf.nn.avg_pool(orig_x, [1, stride, stride, 1], [1, stride, stride, 1], 'VALID')
+        orig_x = tf.pad(orig_x, [[0, 0], [0, 0], [0, 0],
+                     [(out_filter-in_filter)//2, (out_filter-in_filter)//2]])
+        tf.logging.info("avg pooling to fit dimensions. Add out: %s", x.get_shape())
+
+      T = slim.conv2d(x, out_filter, [3, 3], stride=stride,
+                      weights_initializer=tf.random_normal_initializer(stddev=0.01),
+                      biases_initializer=tf.constant_initializer(bias_init),
+                      activation_fn=tf.nn.sigmoid,
+                      scope='transform_gate')
+      # bias_init leads the network initially to be biased towards carry behaviour (i.e. T = 0)
+      x = T * x  +  (1.0 - T) * orig_x
+
+      tf.logging.info('Highway Output: %s', x.get_shape())
     return x
 
   def _build_train_op(self):
@@ -198,7 +215,7 @@ class ResNet(object):
       optimizer = tf.train.GradientDescentOptimizer(self.lrn_rate)
     elif self.hps.optimizer == 'mom':
       #optimizer = tf.train.AdamOptimizer(0.001)
-      #optimizer = tf.train.MomentumOptimizer(self.lrn_rate, 0.9, use_nesterov=True)
+      #ooptimizer = tf.train.MomentumOptimizer(self.lrn_rate, 0.9, use_nesterov=True)
       optimizer = tf.train.MomentumOptimizer(self.lrn_rate, 0.9)
 
     apply_op = optimizer.apply_gradients(
@@ -233,15 +250,15 @@ class ResNet(object):
     n = filter_size * filter_size * out_filters
     return slim.layers.conv2d(x, out_filters, [filter_size, filter_size], stride=stride,
                               padding='SAME', activation_fn=None,
-                              #weights_initializer=tf.random_normal_initializer(stddev=np.sqrt(2.0/n)),
-                              weights_initializer=tf.random_normal_initializer(stddev=0.01),
+                              weights_initializer=tf.random_normal_initializer(stddev=np.sqrt(2.0/n)),
+                              #weights_initializer=tf.random_normal_initializer(stddev=0.01),
                               #weights_initializer=tf.contrib.layers.variance_scaling_initializer(),
                               scope=name)
 
   def _fully_connected(self, x, out_dim):
     return slim.layers.fully_connected(x, out_dim,
-                                       #weights_initializer=tf.uniform_unit_scaling_initializer(factor=1.0)
-                                       weights_initializer=tf.random_normal_initializer(stddev=0.01)
+                                       weights_initializer=tf.uniform_unit_scaling_initializer(factor=1.0)
+                                       #weights_initializer=tf.random_normal_initializer(stddev=0.01)
                                        #weights_initializer=tf.contrib.layers.variance_scaling_initializer()
                                        )
 

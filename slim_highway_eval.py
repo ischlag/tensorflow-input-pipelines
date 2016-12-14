@@ -12,7 +12,7 @@ from datasets.cifar100 import cifar100_data
 from libs import custom_ops
 from nets import bn_conv
 
-log_dir = "logs/cifar10/4stages_0hw_0final_RandNorm_sgd_b2_/"
+log_dir = "logs/cifar10/hw_test_1/"
 eval_dir = log_dir
 batch_size = 128
 num_classes = 10
@@ -29,7 +29,7 @@ sess = tf.Session()
 ## Data
 with tf.device('/cpu:0'):
   d = cifar10_data(batch_size=batch_size, sess=sess)
-  image_batch_tensor, target_batch_tensor = d.build_test_data_tensor(shuffle=False)
+  image_batch_tensor, target_batch_tensor = d.build_test_data_tensor(shuffle=False, augmentation=False)
 
 ## Model
 #logits = bn_conv.inference(image_batch_tensor, num_classes=num_classes, is_training=True)
@@ -44,7 +44,7 @@ hps = nets.highway_uniform.HParams(batch_size=batch_size,
                           num_classes=num_classes,
                           min_lrn_rate=None,
                           lrn_rate=None,
-                          num_residual_units=0,
+                          num_residual_units=10,
                           use_bottleneck=False,
                           weight_decay_rate=0.0002,
                           relu_leakiness=0.1,

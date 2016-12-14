@@ -14,7 +14,7 @@ from nets import bn_conv
 
 tf.logging.set_verbosity(tf.logging.INFO)
 
-log_dir = "logs/cifar10/4stages_0hw_0final_RandNorm_sgd_b2_/"
+log_dir = "logs/cifar10/hw_test_1/"
 batch_size = 128
 num_classes = 10
 epoch_in_steps = int(50000.0/batch_size)
@@ -46,7 +46,7 @@ hps = nets.highway_uniform.HParams(batch_size=batch_size,
                           num_classes=num_classes,
                           min_lrn_rate=0.0001,
                           lrn_rate=0.1,
-                          num_residual_units=0,
+                          num_residual_units=10,
                           use_bottleneck=False,
                           weight_decay_rate=0.0002,
                           relu_leakiness=0.1,
@@ -91,14 +91,14 @@ while not coord.should_stop():
     [model.train_op, summary_op, model.cost, model.global_step, model.predictions, model.labels],
     feed_dict={model.lrn_rate: lrn_rate})
 
-  if train_step < 15000: # 40000
+  if train_step < 40000: # 40000
+    lrn_rate = 0.1
+  elif train_step < 60000: # 60000
     lrn_rate = 0.01
-  elif train_step < 30000: # 60000
+  elif train_step < 80000: # 80000
     lrn_rate = 0.001
-  elif train_step < 40000: # 80000
-    lrn_rate = 0.0001
   else:
-    lrn_rate = 0.00001
+    lrn_rate = 0.0001
 
   duration = time.time() - start_time
   truth = np.argmax(truth, axis=1)
