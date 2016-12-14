@@ -50,28 +50,25 @@ class ResNet(object):
     tf.logging.info('Image Shape: %s', x.get_shape())
 
     with tf.variable_scope('init'):
-      x = self._conv('init_conv', x, 16, stride=1)
-      x = self._batch_norm(x)
-      x = self._relu(x, self.hps.relu_leakiness)
-      x = self._conv('conv1', x, 16, stride=1)
+      x = self._conv('init_conv', x, 10, stride=1)
 
       tf.logging.info('Initial Output: %s', x.get_shape())
 
     with tf.variable_scope('stage1'):
       tf.logging.info("Stage 1")
-      x = self.stage(x, self.hps.num_residual_units, 16, first_layer_stride=1)
+      x = self.stage(x, self.hps.num_residual_units, 10, first_layer_stride=1)
 
     #x = self._max_pool(x)
 
     with tf.variable_scope('stage2'):
       tf.logging.info("Stage 2")
-      x = self.stage(x, self.hps.num_residual_units, 32, first_layer_stride=2)
+      x = self.stage(x, self.hps.num_residual_units, 20, first_layer_stride=2)
 
     #x = self._max_pool(x)
 
     with tf.variable_scope('stage3'):
       tf.logging.info("Stage 3")
-      x = self.stage(x, self.hps.num_residual_units, 64, first_layer_stride=2)
+      x = self.stage(x, self.hps.num_residual_units, 40, first_layer_stride=2)
 
     # snip
     #x = self._max_pool(x)
@@ -130,7 +127,7 @@ class ResNet(object):
   def stage(self, x, n_residuals, out_filter, first_layer_stride=2):
     #with tf.variable_scope("classic"):
     #  x = self._classic(x, out_filter)
-    with tf.variable_scope('residual_' + 1):
+    with tf.variable_scope('residual_' + str(0)):
       x = self._residual(x, out_filter, stride=first_layer_stride)
     for i in range(1, n_residuals):
       with tf.variable_scope('residual_' + str(i)):
@@ -156,7 +153,7 @@ class ResNet(object):
     with tf.variable_scope('sub2'):
       x = self._batch_norm(x)
       x = self._relu(x, self.hps.relu_leakiness)
-      x = self._conv('conv2', x, out_filter, stride=stride)
+      x = self._conv('conv2', x, out_filter, stride=1)
 
     with tf.variable_scope('sub_add'):
       in_filter = orig_x.get_shape()[-1].value
@@ -193,12 +190,17 @@ class ResNet(object):
                      [(out_filter-in_filter)//2, (out_filter-in_filter)//2]])
         tf.logging.info("avg pooling to fit dimensions. Add out: %s", x.get_shape())
 
+      filter_size = 3
+      n = filter_size * filter_size * out_filter
       T = slim.conv2d(x, out_filter, [3, 3], stride=stride,
+                      weights_initializer=tf.random_normal_initializer(stddev=np.sqrt(2.0/n)),
                       biases_initializer=tf.constant_initializer(bias_init),
                       activation_fn=tf.nn.sigmoid,
-                      name='transform_gate')
+                      scope='transform_gate')
+
       # bias_init leads the network initially to be biased towards carry behaviour (i.e. T = 0)
       x = T * x  +  (1.0 - T) * orig_x
+
     return x
 
   def _build_train_op(self):

@@ -50,28 +50,25 @@ class ResNet(object):
     tf.logging.info('Image Shape: %s', x.get_shape())
 
     with tf.variable_scope('init'):
-      x = self._conv('init_conv', x, 16, stride=1)
-      x = self._batch_norm(x)
-      x = self._relu(x, self.hps.relu_leakiness)
-      x = self._conv('conv1', x, 16, stride=1)
+      x = self._conv('init_conv', x, 10, stride=1)
 
       tf.logging.info('Initial Output: %s', x.get_shape())
 
     with tf.variable_scope('stage1'):
       tf.logging.info("Stage 1")
-      x = self.stage(x, self.hps.num_residual_units, 16)
+      x = self.stage(x, self.hps.num_residual_units, 10, first_layer_stride=1)
 
     #x = self._max_pool(x)
 
     with tf.variable_scope('stage2'):
       tf.logging.info("Stage 2")
-      x = self.stage(x, self.hps.num_residual_units, 32)
+      x = self.stage(x, self.hps.num_residual_units, 20, first_layer_stride=2)
 
     #x = self._max_pool(x)
 
     with tf.variable_scope('stage3'):
       tf.logging.info("Stage 3")
-      x = self.stage(x, self.hps.num_residual_units, 64)
+      x = self.stage(x, self.hps.num_residual_units, 40, first_layer_stride=2)
 
     # snip
     #x = self._max_pool(x)
@@ -127,14 +124,14 @@ class ResNet(object):
 
       tf.scalar_summary(self.mode + '/cost', self.cost)
 
-  def stage(self, x, n_residuals, out_filter):
+  def stage(self, x, n_residuals, out_filter, first_layer_stride=2):
     #with tf.variable_scope("classic"):
     #  x = self._classic(x, out_filter)
-    with tf.variable_scope('residual_' + 1):
-      x = self._highway(x, out_filter, stride=2, bias_init=-10)
+    with tf.variable_scope('residual_' + str(0)):
+      x = self._highway(x, out_filter, bias_init=-2, stride=first_layer_stride)
     for i in range(1, n_residuals):
       with tf.variable_scope('residual_' + str(i)):
-        x = self._highway(x, out_filter, bias_init=-10)
+        x = self._highway(x, out_filter, bias_init=-2, stride=1)
     return x
 
   def _classic(self, x, out_filter, stride=1):
@@ -156,21 +153,20 @@ class ResNet(object):
     with tf.variable_scope('sub2'):
       x = self._batch_norm(x)
       x = self._relu(x, self.hps.relu_leakiness)
-      x = self._conv('conv2', x, out_filter, stride=stride)
+      x = self._conv('conv2', x, out_filter, stride=1)
 
     with tf.variable_scope('sub_add'):
-      #in_filter = orig_x.get_shape()[-1].value
-      #if in_filter != out_filter:
-      #  orig_x = tf.nn.avg_pool(orig_x, [1, stride, stride, 1], [1, stride, stride, 1], 'VALID')
-      #  orig_x = tf.pad(
-      #      orig_x, [[0, 0], [0, 0], [0, 0],
-      #               [(out_filter-in_filter)//2, (out_filter-in_filter)//2]])
-      #  tf.logging.info("avg pooling to fit dimensions. Add out: %s", x.get_shape())
+      in_filter = orig_x.get_shape()[-1].value
+      if in_filter != out_filter:
+        orig_x = tf.nn.avg_pool(orig_x, [1, stride, stride, 1], [1, stride, stride, 1], 'VALID')
+        orig_x = tf.pad(
+            orig_x, [[0, 0], [0, 0], [0, 0],
+                     [(out_filter-in_filter)//2, (out_filter-in_filter)//2]])
+        tf.logging.info("avg pooling to fit dimensions. Add out: %s", x.get_shape())
       x += orig_x
 
     tf.logging.info('Residual Block Output: %s', x.get_shape())
     return x
-
 
   def _highway(self, x, out_filter, bias_init, stride=1):
     """Residual unit with 2 sub layers."""
@@ -194,15 +190,17 @@ class ResNet(object):
                      [(out_filter-in_filter)//2, (out_filter-in_filter)//2]])
         tf.logging.info("avg pooling to fit dimensions. Add out: %s", x.get_shape())
 
+      filter_size = 3
+      n = filter_size * filter_size * out_filter
       T = slim.conv2d(x, out_filter, [3, 3], stride=stride,
-                      weights_initializer=tf.random_normal_initializer(stddev=0.01),
+                      weights_initializer=tf.random_normal_initializer(stddev=np.sqrt(2.0/n)),
                       biases_initializer=tf.constant_initializer(bias_init),
                       activation_fn=tf.nn.sigmoid,
                       scope='transform_gate')
+
       # bias_init leads the network initially to be biased towards carry behaviour (i.e. T = 0)
       x = T * x  +  (1.0 - T) * orig_x
 
-      tf.logging.info('Highway Output: %s', x.get_shape())
     return x
 
   def _build_train_op(self):
@@ -259,6 +257,8 @@ class ResNet(object):
 
   def _fully_connected(self, x, out_dim):
     return slim.layers.fully_connected(x, out_dim,
+                                       activation_fn=None,
+                                       #weights_initializer=tf.uniform_unit_scaling_initializer(factor=1.0)
                                        weights_initializer=tf.uniform_unit_scaling_initializer(factor=1.0)
                                        #weights_initializer=tf.random_normal_initializer(stddev=0.01)
                                        #weights_initializer=tf.contrib.layers.variance_scaling_initializer()

@@ -12,7 +12,7 @@ from datasets.cifar100 import cifar100_data
 from libs import custom_ops
 from nets import bn_conv
 
-log_dir = "logs/cifar10/hw_test_1/"
+log_dir = "logs/cifar10/hw_uniform/"
 eval_dir = log_dir
 batch_size = 128
 num_classes = 10
@@ -44,7 +44,7 @@ hps = nets.highway_uniform.HParams(batch_size=batch_size,
                           num_classes=num_classes,
                           min_lrn_rate=None,
                           lrn_rate=None,
-                          num_residual_units=10,
+                          num_residual_units=4,
                           use_bottleneck=False,
                           weight_decay_rate=0.0002,
                           relu_leakiness=0.1,
