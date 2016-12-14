@@ -59,7 +59,7 @@ class ResNet(object):
 
     with tf.variable_scope('stage1'):
       tf.logging.info("Stage 1")
-      x = self.stage(x, self.hps.num_residual_units, 16)
+      x = self.stage(x, self.hps.num_residual_units, 16, first_layer_stride=1)
 
     #x = self._max_pool(x)
 
@@ -127,12 +127,14 @@ class ResNet(object):
 
       tf.scalar_summary(self.mode + '/cost', self.cost)
 
-  def stage(self, x, n_residuals, out_filter):
+  def stage(self, x, n_residuals, out_filter, first_layer_stride=2):
     #with tf.variable_scope("classic"):
     #  x = self._classic(x, out_filter)
-    for i in range(n_residuals):
+    with tf.variable_scope('residual_' + 1):
+      x = self._residual(x, out_filter, stride=first_layer_stride)
+    for i in range(1, n_residuals):
       with tf.variable_scope('residual_' + str(i)):
-        x = self._residual(x, out_filter)
+        x = self._residual(x, out_filter, stride=1)
     return x
 
   def _classic(self, x, out_filter, stride=1):
@@ -253,6 +255,7 @@ class ResNet(object):
 
   def _fully_connected(self, x, out_dim):
     return slim.layers.fully_connected(x, out_dim,
+                                       activation_fn=None,
                                        #weights_initializer=tf.uniform_unit_scaling_initializer(factor=1.0)
                                        weights_initializer=tf.uniform_unit_scaling_initializer(factor=1.0)
                                        #weights_initializer=tf.random_normal_initializer(stddev=0.01)

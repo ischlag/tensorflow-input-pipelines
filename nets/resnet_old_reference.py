@@ -69,7 +69,7 @@ class ResNet(object):
     """Build the core model within the graph."""
     with tf.variable_scope('init'):
       x = self._images
-      x = self._conv('init_conv', x, 3, 3, 16, self._stride_arr(1))
+      x = self._conv('init_conv', x, 3, 3, 10, self._stride_arr(1))
 
     strides = [1, 2, 2]
     activate_before_residual = [True, False, False]
@@ -78,15 +78,16 @@ class ResNet(object):
       filters = [16, 64, 128, 256]
     else:
       res_func = self._residual
-      filters = [16, 16, 32, 64]
+      filters = [10, 10, 20, 40]
       # Uncomment the following codes to use w28-10 wide residual network.
       # It is more memory efficient than very deep residual network and has
       # comparably good performance.
       # https://arxiv.org/pdf/1605.07146v1.pdf
-      filters = [16, 160, 320, 640]
+      #filters = [16, 160, 320, 640]
       # Update hps.num_residual_units to 9
 
     with tf.variable_scope('unit_1_0'):
+      tf.logging.info("unit_1")
       x = res_func(x, filters[0], filters[1], self._stride_arr(strides[0]),
                    activate_before_residual[0])
     for i in range(1, self.hps.num_residual_units):
@@ -94,6 +95,7 @@ class ResNet(object):
         x = res_func(x, filters[1], filters[1], self._stride_arr(1), False)
 
     with tf.variable_scope('unit_2_0'):
+      tf.logging.info("unit_2")
       x = res_func(x, filters[1], filters[2], self._stride_arr(strides[1]),
                    activate_before_residual[1])
     for i in range(1, self.hps.num_residual_units):
@@ -101,6 +103,7 @@ class ResNet(object):
         x = res_func(x, filters[2], filters[2], self._stride_arr(1), False)
 
     with tf.variable_scope('unit_3_0'):
+      tf.logging.info("unit_3")
       x = res_func(x, filters[2], filters[3], self._stride_arr(strides[2]),
                    activate_before_residual[2])
     for i in range(1, self.hps.num_residual_units):
@@ -218,6 +221,7 @@ class ResNet(object):
         orig_x = tf.pad(
             orig_x, [[0, 0], [0, 0], [0, 0],
                      [(out_filter-in_filter)//2, (out_filter-in_filter)//2]])
+        tf.logging.info("avg pooling to fit dimensions. Add out: %s", x.get_shape())
       x += orig_x
 
     tf.logging.info('image after unit %s', x.get_shape())

@@ -130,9 +130,11 @@ class ResNet(object):
   def stage(self, x, n_residuals, out_filter):
     #with tf.variable_scope("classic"):
     #  x = self._classic(x, out_filter)
-    for i in range(n_residuals):
-      with tf.variable_scope('highway_' + str(i)):
-        x = self._highway(x, out_filter, bias_init=-2)
+    with tf.variable_scope('residual_' + 1):
+      x = self._highway(x, out_filter, stride=2, bias_init=-10)
+    for i in range(1, n_residuals):
+      with tf.variable_scope('residual_' + str(i)):
+        x = self._highway(x, out_filter, bias_init=-10)
     return x
 
   def _classic(self, x, out_filter, stride=1):
