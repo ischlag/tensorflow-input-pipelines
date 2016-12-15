@@ -61,7 +61,7 @@ class ResNet(object):
       x_A, x_B = tf.split(3, 2, x)
 
     with tf.variable_scope('block1'):
-      tf.logging.info("Block 1, input: %s", x_A.get_shape())
+      tf.logging.info("Block 1, input: %s", x.get_shape())
       x_A = self.stage(x_A, self.hps.num_residual_units, 8, first_layer_stride=1, scope='A')
       x_B = self.stage(x_B, self.hps.num_residual_units, 8, first_layer_stride=1, scope='B')
 
@@ -70,7 +70,7 @@ class ResNet(object):
       x_BA, x_BB = tf.split(3, 2, x_B)
 
     with tf.variable_scope('block2'):
-      tf.logging.info("Block 2, input: %s", x_AA.get_shape())
+      tf.logging.info("Block 2, input: %s", x_A.get_shape())
       x_AA = self.stage(x_AA, self.hps.num_residual_units, 8, first_layer_stride=2, scope='AA')
       x_AB = self.stage(x_AB, self.hps.num_residual_units, 8, first_layer_stride=2, scope='AB')
       x_BA = self.stage(x_BA, self.hps.num_residual_units, 8, first_layer_stride=2, scope='BA')
@@ -83,7 +83,7 @@ class ResNet(object):
       x_BBA, x_BBB = tf.split(3, 2, x_BB)
 
     with tf.variable_scope('block3'):
-      tf.logging.info("Block 3, input: %s", x_AAA.get_shape())
+      tf.logging.info("Block 3, input: %s", x_AA.get_shape())
       x_AAA = self.stage(x_AAA, self.hps.num_residual_units, 8, first_layer_stride=2, scope='AAA')
       x_AAB = self.stage(x_AAB, self.hps.num_residual_units, 8, first_layer_stride=2, scope='AAB')
       x_ABA = self.stage(x_ABA, self.hps.num_residual_units, 8, first_layer_stride=2, scope='ABA')
