@@ -50,28 +50,57 @@ class ResNet(object):
     tf.logging.info('Image Shape: %s', x.get_shape())
 
     with tf.variable_scope('init'):
-      x = self._conv('init_conv', x, 10, stride=1)
+      x = self._conv('init_conv', x, 16, stride=1)
 
       tf.logging.info('Initial Output: %s', x.get_shape())
 
-    with tf.variable_scope('stage1'):
-      tf.logging.info("Stage 1")
-      x = self.stage(x, self.hps.num_residual_units, 10, first_layer_stride=1)
+    with tf.variable_scope('block1-split'):
+      x_A, x_B = tf.split(3, 2, x)
 
-    with tf.variable_scope('stage2'):
-      tf.logging.info("Stage 2")
-      x = self.stage(x, self.hps.num_residual_units, 20, first_layer_stride=2)
+    with tf.variable_scope('block1'):
+      tf.logging.info("Block 1, input: %s", x_A.get_shape())
+      x_A = self.stage(x_A, self.hps.num_residual_units, 8, first_layer_stride=1, scope='A')
+      x_B = self.stage(x_B, self.hps.num_residual_units, 8, first_layer_stride=1, scope='B')
 
-    with tf.variable_scope('stage3'):
-      tf.logging.info("Stage 3")
-      x = self.stage(x, self.hps.num_residual_units, 40, first_layer_stride=2)
+    with tf.variable_scope('stage2-split'):
+      x_AA, x_AB = tf.split(3, 2, x_A)
+      x_BA, x_BB = tf.split(3, 2, x_B)
 
+    with tf.variable_scope('block2'):
+      tf.logging.info("Block 2, input: %s", x_AA.get_shape())
+      x_AA = self.stage(x_AA, self.hps.num_residual_units, 4, first_layer_stride=2, scope='AA')
+      x_AB = self.stage(x_AB, self.hps.num_residual_units, 4, first_layer_stride=2, scope='AB')
+      x_BA = self.stage(x_BA, self.hps.num_residual_units, 4, first_layer_stride=2, scope='BA')
+      x_BB = self.stage(x_BB, self.hps.num_residual_units, 4, first_layer_stride=2, scope='BB')
+
+    with tf.variable_scope('stage2-split'):
+      x_AAA, x_AAB = tf.split(3, 2, x_AA)
+      x_ABA, x_ABB = tf.split(3, 2, x_AB)
+      x_BAA, x_BAB = tf.split(3, 2, x_BA)
+      x_BBA, x_BBB = tf.split(3, 2, x_BB)
+
+    with tf.variable_scope('block3'):
+      tf.logging.info("Block 3, input: %s", x_AAA.get_shape())
+      x_AAA = self.stage(x_AAA, self.hps.num_residual_units, 2, first_layer_stride=2, scope='AAA')
+      x_AAB = self.stage(x_AAB, self.hps.num_residual_units, 2, first_layer_stride=2, scope='AAB')
+      x_ABA = self.stage(x_ABA, self.hps.num_residual_units, 2, first_layer_stride=2, scope='ABA')
+      x_ABB = self.stage(x_ABB, self.hps.num_residual_units, 2, first_layer_stride=2, scope='ABB')
+      x_BAA = self.stage(x_BAA, self.hps.num_residual_units, 2, first_layer_stride=2, scope='BAA')
+      x_BAB = self.stage(x_BAB, self.hps.num_residual_units, 2, first_layer_stride=2, scope='BAB')
+      x_BBA = self.stage(x_BBA, self.hps.num_residual_units, 2, first_layer_stride=2, scope='BBA')
+      x_BBB = self.stage(x_BBB, self.hps.num_residual_units, 2, first_layer_stride=2, scope='BBB')
+
+    with tf.variable_scope('unify'):
+      x = tf.concat(3, [x_AAA, x_AAB, x_ABA, x_ABB, x_BAA, x_BAB, x_BBA, x_BBB])
+      tf.logging.info('Concat Output: %s', x.get_shape())
 
     with tf.variable_scope('final'):
+      x = self._conv('unify', x, 40, 1)
       x = self._batch_norm(x)
       x = self._relu(x, self.hps.relu_leakiness)
       # avg pool
       x = self._global_avg_pool(x)
+      tf.logging.info('Final Layer Output: %s', x.get_shape())
 
     with tf.variable_scope('logit'):
       x = slim.layers.flatten(x)
@@ -87,15 +116,17 @@ class ResNet(object):
 
       tf.scalar_summary(self.mode + '/cost', self.cost)
 
-  def stage(self, x, n_residuals, out_filter, first_layer_stride=2):
-    #with tf.variable_scope("classic"):
-    #  x = self._classic(x, out_filter)
-    with tf.variable_scope('residual_' + str(0)):
-      x = self._highway(x, out_filter, bias_init=-2, stride=first_layer_stride)
-    for i in range(1, n_residuals):
-      with tf.variable_scope('residual_' + str(i)):
-        x = self._highway(x, out_filter, bias_init=-2, stride=1)
-    return x
+  def stage(self, x, n_residuals, out_filter, first_layer_stride=2, scope='default_stage'):
+    with tf.variable_scope(scope):
+      tf.logging.info("Stage " + scope)
+      with tf.variable_scope('residual_' + str(0)):
+        x = self._residual(x, out_filter, stride=first_layer_stride)
+        #x = self._highway(x, out_filter, bias_init=-2, stride=first_layer_stride)
+      for i in range(1, n_residuals):
+        with tf.variable_scope('residual_' + str(i)):
+          x = self._residual(x, out_filter, stride=1)
+          #x = self._highway(x, out_filter, bias_init=-2, stride=1)
+      return x
 
   def _classic(self, x, out_filter, stride=1):
     x = self._batch_norm(x)
@@ -120,7 +151,9 @@ class ResNet(object):
 
     with tf.variable_scope('sub_add'):
       in_filter = orig_x.get_shape()[-1].value
-      if in_filter != out_filter:
+      in_kernel_size = orig_x.get_shape()[-2].value
+      out_kernel_size = x.get_shape()[-2].value
+      if in_filter != out_filter or in_kernel_size != out_kernel_size:
         orig_x = tf.nn.avg_pool(orig_x, [1, stride, stride, 1], [1, stride, stride, 1], 'VALID')
         orig_x = tf.pad(
             orig_x, [[0, 0], [0, 0], [0, 0],

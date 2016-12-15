@@ -14,7 +14,7 @@ from nets import bn_conv
 
 tf.logging.set_verbosity(tf.logging.INFO)
 
-log_dir = "logs/cifar10/hw_uniform/"
+log_dir = "logs/cifar10/deep_roots/"
 batch_size = 64
 num_classes = 10
 epoch_in_steps = int(50000.0/batch_size)
@@ -41,8 +41,8 @@ with tf.device('/cpu:0'):
 #logits = tf.reduce_mean(net, [1, 2], name='pool5', keep_dims=False)
 
 #import nets.resnet
-import nets.highway_uniform
-hps = nets.highway_uniform.HParams(batch_size=batch_size,
+import nets.deep_roots
+hps = nets.deep_roots.HParams(batch_size=batch_size,
                           num_classes=num_classes,
                           min_lrn_rate=0.0001,
                           lrn_rate=0.1,
@@ -51,7 +51,7 @@ hps = nets.highway_uniform.HParams(batch_size=batch_size,
                           weight_decay_rate=0.0002,
                           relu_leakiness=0.1,
                           optimizer='mom')
-model = nets.highway_uniform.ResNet(hps, image_batch_tensor, target_batch_tensor, 'train')
+model = nets.deep_roots.ResNet(hps, image_batch_tensor, target_batch_tensor, 'train')
 model.build_graph()
 
 ## Losses and Accuracies

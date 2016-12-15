@@ -196,11 +196,12 @@ class ResNet(object):
                       weights_initializer=tf.random_normal_initializer(stddev=np.sqrt(2.0/n)),
                       biases_initializer=tf.constant_initializer(bias_init),
                       activation_fn=tf.nn.sigmoid,
-                      scope='transform_gate')
+                      scope='transform_gate_1')
 
       # bias_init leads the network initially to be biased towards carry behaviour (i.e. T = 0)
       x = T * x  +  (1.0 - T) * orig_x
 
+    tf.logging.info('Highway Block Output: %s', x.get_shape())
     return x
 
   def _build_train_op(self):
