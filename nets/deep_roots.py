@@ -6,10 +6,12 @@ https://arxiv.org/pdf/1512.03385v1.pdf
 https://arxiv.org/pdf/1605.07146v1.pdf
 """
 from collections import namedtuple
+from libs import custom_ops
 
 import numpy as np
 import tensorflow as tf
 import tensorflow.contrib.slim as slim
+
 
 HParams = namedtuple('HParams',
                      'batch_size, num_classes, min_lrn_rate, lrn_rate, '
@@ -40,6 +42,7 @@ class ResNet(object):
     """Build a whole graph for the model."""
     self.global_step = tf.Variable(0, name='global_step', trainable=False)
     self._build_model()
+    custom_ops.log_number_of_params()
     if self.mode == 'train':
       self._build_train_op()
     self.summaries = tf.merge_all_summaries()
@@ -68,10 +71,10 @@ class ResNet(object):
 
     with tf.variable_scope('block2'):
       tf.logging.info("Block 2, input: %s", x_AA.get_shape())
-      x_AA = self.stage(x_AA, self.hps.num_residual_units, 4, first_layer_stride=2, scope='AA')
-      x_AB = self.stage(x_AB, self.hps.num_residual_units, 4, first_layer_stride=2, scope='AB')
-      x_BA = self.stage(x_BA, self.hps.num_residual_units, 4, first_layer_stride=2, scope='BA')
-      x_BB = self.stage(x_BB, self.hps.num_residual_units, 4, first_layer_stride=2, scope='BB')
+      x_AA = self.stage(x_AA, self.hps.num_residual_units, 8, first_layer_stride=2, scope='AA')
+      x_AB = self.stage(x_AB, self.hps.num_residual_units, 8, first_layer_stride=2, scope='AB')
+      x_BA = self.stage(x_BA, self.hps.num_residual_units, 8, first_layer_stride=2, scope='BA')
+      x_BB = self.stage(x_BB, self.hps.num_residual_units, 8, first_layer_stride=2, scope='BB')
 
     with tf.variable_scope('stage2-split'):
       x_AAA, x_AAB = tf.split(3, 2, x_AA)
@@ -81,14 +84,14 @@ class ResNet(object):
 
     with tf.variable_scope('block3'):
       tf.logging.info("Block 3, input: %s", x_AAA.get_shape())
-      x_AAA = self.stage(x_AAA, self.hps.num_residual_units, 2, first_layer_stride=2, scope='AAA')
-      x_AAB = self.stage(x_AAB, self.hps.num_residual_units, 2, first_layer_stride=2, scope='AAB')
-      x_ABA = self.stage(x_ABA, self.hps.num_residual_units, 2, first_layer_stride=2, scope='ABA')
-      x_ABB = self.stage(x_ABB, self.hps.num_residual_units, 2, first_layer_stride=2, scope='ABB')
-      x_BAA = self.stage(x_BAA, self.hps.num_residual_units, 2, first_layer_stride=2, scope='BAA')
-      x_BAB = self.stage(x_BAB, self.hps.num_residual_units, 2, first_layer_stride=2, scope='BAB')
-      x_BBA = self.stage(x_BBA, self.hps.num_residual_units, 2, first_layer_stride=2, scope='BBA')
-      x_BBB = self.stage(x_BBB, self.hps.num_residual_units, 2, first_layer_stride=2, scope='BBB')
+      x_AAA = self.stage(x_AAA, self.hps.num_residual_units, 8, first_layer_stride=2, scope='AAA')
+      x_AAB = self.stage(x_AAB, self.hps.num_residual_units, 8, first_layer_stride=2, scope='AAB')
+      x_ABA = self.stage(x_ABA, self.hps.num_residual_units, 8, first_layer_stride=2, scope='ABA')
+      x_ABB = self.stage(x_ABB, self.hps.num_residual_units, 8, first_layer_stride=2, scope='ABB')
+      x_BAA = self.stage(x_BAA, self.hps.num_residual_units, 8, first_layer_stride=2, scope='BAA')
+      x_BAB = self.stage(x_BAB, self.hps.num_residual_units, 8, first_layer_stride=2, scope='BAB')
+      x_BBA = self.stage(x_BBA, self.hps.num_residual_units, 8, first_layer_stride=2, scope='BBA')
+      x_BBB = self.stage(x_BBB, self.hps.num_residual_units, 8, first_layer_stride=2, scope='BBB')
 
     with tf.variable_scope('unify'):
       x = tf.concat(3, [x_AAA, x_AAB, x_ABA, x_ABB, x_BAA, x_BAB, x_BBA, x_BBB])
@@ -269,3 +272,4 @@ class ResNet(object):
   def _global_avg_pool(self, x):
     assert x.get_shape().ndims == 4
     return tf.reduce_mean(x, [1, 2])
+

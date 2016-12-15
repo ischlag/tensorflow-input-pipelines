@@ -6,6 +6,7 @@ https://arxiv.org/pdf/1512.03385v1.pdf
 https://arxiv.org/pdf/1605.07146v1.pdf
 """
 from collections import namedtuple
+from libs import custom_ops
 
 import numpy as np
 import tensorflow as tf
@@ -40,6 +41,7 @@ class ResNet(object):
     """Build a whole graph for the model."""
     self.global_step = tf.Variable(0, name='global_step', trainable=False)
     self._build_model()
+    custom_ops.log_number_of_params()
     if self.mode == 'train':
       self._build_train_op()
     self.summaries = tf.merge_all_summaries()
@@ -273,3 +275,4 @@ class ResNet(object):
   def _global_avg_pool(self, x):
     assert x.get_shape().ndims == 4
     return tf.reduce_mean(x, [1, 2])
+
