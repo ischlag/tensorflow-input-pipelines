@@ -158,7 +158,7 @@ class ResNet(object):
       filter_size = 3
       n = filter_size * filter_size * out_filter
       T = slim.conv2d(x, out_filter, [3, 3], stride=1,
-                      weights_initializer=tf.random_normal_initializer(stddev=np.sqrt(2.0/n)),
+                      weights_initializer=tf.contrib.layers.xavier_initializer(),
                       biases_initializer=tf.constant_initializer(bias_init),
                       activation_fn=tf.nn.sigmoid,
                       scope='transform_gate_1')
