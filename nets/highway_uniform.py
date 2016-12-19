@@ -184,8 +184,9 @@ class ResNet(object):
       #ooptimizer = tf.train.MomentumOptimizer(self.lrn_rate, 0.9, use_nesterov=True)
       optimizer = tf.train.MomentumOptimizer(self.lrn_rate, 0.9)
 
+    clipped_grads, _ = tf.clip_by_global_norm(grads, 1)
     apply_op = optimizer.apply_gradients(
-        zip(grads, trainable_variables),
+        zip(clipped_grads, trainable_variables),
         global_step=self.global_step, name='train_step')
 
     train_ops = [apply_op] + self._extra_train_ops + tf.get_collection(tf.GraphKeys.UPDATE_OPS)
